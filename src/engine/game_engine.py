@@ -1,54 +1,80 @@
-import asyncio
+import json
 import pygame
-import esper
 
-from src.ecs.load.load_world import load_window_config
+from src.engine.scenes.scene import Scene
+from src.game.example_scene import ExampleScene
+from src.game.example_scene_2 import ExampleScene2
 
 
 class GameEngine:
     def __init__(self) -> None:
+        with open("assets/cfg/window.json", encoding="utf-8") as window_file:
+            self._window_cfg = json.load(window_file)
+
         pygame.init()
-        self.window_config = load_window_config("assets/cfg/window.json")
-        self.screen = pygame.display.set_mode(self.window_config["size"], 0)
-        pygame.display.set_caption(self.window_config["title"])
-        self.clock = pygame.time.Clock()
-        self.delta_time = 0
-        self.game_time = 0
+        pygame.display.set_caption(self._window_cfg["title"])
+        self.screen = pygame.display.set_mode(
+            (self._window_cfg["size"]["w"], self._window_cfg["size"]["h"]),
+            pygame.SCALED)
+
+        self._clock = pygame.time.Clock()
+        self._framerate = self._window_cfg["framerate"]
+        self._delta_time = 0
+        self._bg_color = pygame.Color(self._window_cfg["bg_color"]["r"],
+                                     self._window_cfg["bg_color"]["g"],
+                                     self._window_cfg["bg_color"]["b"])
         self.is_running = False
 
-        self.ecs_world = esper.World()
+        self._scenes: dict[str, Scene] = {}
+        self._scenes["EXAMPLE_SCENE"] = ExampleScene(self)
+        self._scenes["EXAMPLE_SCENE_2"] = ExampleScene2(self)
+        self._current_scene: Scene = None
+        self._scene_name_to_switch: str = None
 
-    async def run(self) -> None:
-        self._create()
+    def run(self, start_scene_name: str) -> None:
         self.is_running = True
+        self._current_scene = self._scenes[start_scene_name]
+        self._create()
         while self.is_running:
             self._calculate_time()
             self._process_events()
             self._update()
             self._draw()
-            await asyncio.sleep(0)
-        self._clean()
+            self._handle_switch_scene()
+        self._do_clean()
+
+    def switch_scene(self, new_scene_name: str):
+        self._scene_name_to_switch = new_scene_name
 
     def _create(self):
-        pass
+        self._current_scene.do_create()
 
     def _calculate_time(self):
-        self.clock.tick(self.window_config["framerate"])
-        self.delta_time = self.clock.get_time() / 1000.0
-        self.game_time += self.delta_time
+        self._clock.tick(self._framerate)
+        self._delta_time = self._clock.get_time() / 1000.0
 
     def _process_events(self):
         for event in pygame.event.get():
+            self._current_scene.do_process_events(event)
             if event.type == pygame.QUIT:
                 self.is_running = False
 
     def _update(self):
-        pass
+        self._current_scene.simulate(self._delta_time)
 
     def _draw(self):
-        self.screen.fill(self.window_config["bg_color"])
+        self.screen.fill(self._bg_color)
+        self._current_scene.do_draw(self.screen)
         pygame.display.flip()
 
-    def _clean(self):
-        self.ecs_world.clear_database()
+    def _handle_switch_scene(self):
+        if self._scene_name_to_switch is not None:
+            self._current_scene.clean()
+            self._current_scene = self._scenes[self._scene_name_to_switch]
+            self._current_scene.do_create()
+            self._scene_name_to_switch = None
+
+    def _do_clean(self):
+        if self._current_scene is not None:
+            self._current_scene.clean()
         pygame.quit()

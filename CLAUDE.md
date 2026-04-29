@@ -28,13 +28,22 @@ Never instantiate services directly — use `ServiceLocator.images_service`, `.s
 - Entity factory functions go in `src/create/prefab_creator.py`
 - Each function takes `world: esper.World` as first argument, creates an entity with components, and returns the entity ID
 
-### Game Engine
-- `GameEngine` (`src/engine/game_engine.py`) owns the main game loop
-- `_create()`: initial entity creation
-- `_process_events()`: input handling
-- `_update()`: call systems each frame
-- `_draw()`: rendering systems + `pygame.display.flip()`
-- `_clean()`: cleanup on exit
+### Game Engine & Scenes
+- `GameEngine` (`src/engine/game_engine.py`) owns the main game loop and manages scene switching
+- Scenes are registered by name in `GameEngine.__init__` and the game starts with `engine.run("SCENE_NAME")`
+- `GameEngine.switch_scene(name)` triggers a scene transition at the end of the current frame
+
+### Scene Base Class
+- `Scene` (`src/engine/scenes/scene.py`) is the base class for all game scenes. Each scene owns its own `esper.World`
+- Override these methods in subclasses:
+  - `do_create()`: set up entities for the scene
+  - `do_process_events(event)`: handle input events
+  - `do_update(delta_time)`: run systems each frame
+  - `do_draw(screen)`: render the scene
+  - `do_action(action)`: handle gameplay actions
+  - `do_clean()`: cleanup when leaving the scene
+- Call `self.switch_scene("SCENE_NAME")` from within a scene to transition
+- Game scenes go in `src/game/` (e.g., `menu_scene.py`, `play_scene.py`)
 
 ## Dependencies
 - **pygame-ce** (not pygame) — rendering, input, audio
