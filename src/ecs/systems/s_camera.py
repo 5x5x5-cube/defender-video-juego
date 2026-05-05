@@ -17,10 +17,12 @@ def system_camera(world: esper.World, delta_time: float,
 
     for _, c_viewport in world.get_component(CViewport):
         target_x = _calculate_target(player_x, player_facing, c_viewport.screen_width)
+        diff = _shortest_circular_distance(c_viewport.origin_x, target_x, c_viewport.world_width)
         c_viewport.origin_x = _move_toward_target(
-            c_viewport.origin_x, target_x, lerp_speed, min_speed,
+            c_viewport.origin_x, diff, lerp_speed, min_speed,
             player_vel_x, max_speed, delta_time)
-        _clamp_to_world_bounds(c_viewport)
+        if c_viewport.world_width > 0:
+            c_viewport.origin_x = c_viewport.origin_x % c_viewport.world_width
 
 
 def _get_player_data(world: esper.World):
@@ -37,13 +39,23 @@ def _calculate_target(player_x: float, facing: FacingDirection,
     return player_x - 2 * screen_width / 3
 
 
-def _move_toward_target(current: float, target: float,
+def _shortest_circular_distance(current: float, target: float, world_width: float) -> float:
+    diff = target - current
+    if world_width > 0:
+        half_world = world_width / 2
+        if diff < -half_world:
+            diff += world_width
+        elif diff > half_world:
+            diff -= world_width
+    return diff
+
+
+def _move_toward_target(current: float, diff: float,
                         lerp_speed: float, min_speed: float,
                         player_vel_x: float, max_speed: float,
                         delta_time: float) -> float:
-    diff = target - current
     if _is_close_enough(diff):
-        return target
+        return current + diff
 
     step = _calculate_lerp_step(diff, lerp_speed, delta_time)
     if _is_moving_with_player(diff, player_vel_x):
@@ -76,9 +88,3 @@ def _enforce_min_speed(step: float, diff: float, min_speed: float,
     return step
 
 
-def _clamp_to_world_bounds(c_viewport: CViewport):
-    if c_viewport.origin_x < 0:
-        c_viewport.origin_x = 0
-    max_origin = c_viewport.world_width - c_viewport.screen_width
-    if c_viewport.origin_x > max_origin:
-        c_viewport.origin_x = max_origin

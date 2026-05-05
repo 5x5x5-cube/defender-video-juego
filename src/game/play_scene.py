@@ -16,6 +16,7 @@ from src.ecs.systems.s_player_burner_state import system_player_burner_state
 from src.ecs.systems.s_player_burner_tracking import system_player_burner_tracking
 from src.ecs.systems.s_animation import system_animation
 from src.ecs.systems.s_camera import system_camera
+from src.ecs.systems.s_debug_rendering import system_debug_rendering
 
 
 class PlayScene(Scene):
@@ -41,12 +42,16 @@ class PlayScene(Scene):
         create_viewport(self.ecs_world, world_width, self.screen_rect.width)
         create_input_commands(self.ecs_world)
         self._held_horizontal: set[FacingDirection] = set()
+        self._debug_enabled = False
 
     def do_process_events(self, event: pygame.event):
         system_input_player(self.ecs_world, event, self.do_action)
 
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.switch_scene("GAME_OVER_SCENE")
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.switch_scene("GAME_OVER_SCENE")
+            elif event.key == pygame.K_TAB:
+                self._debug_enabled = not self._debug_enabled
 
     def do_action(self, c_input: CInputCommand):
         if c_input.name == "MOVE_RIGHT":
@@ -80,6 +85,8 @@ class PlayScene(Scene):
 
     def do_draw(self, screen):
         system_rendering(self.ecs_world, screen)
+        if self._debug_enabled:
+            system_debug_rendering(self.ecs_world, screen)
 
     def _set_player_horizontal(self, direction: FacingDirection, pressed: bool):
         if pressed:

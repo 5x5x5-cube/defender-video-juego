@@ -12,7 +12,7 @@ from src.ecs.systems.s_camera import system_camera
 
 SCREEN_WIDTH = 320
 WORLD_WIDTH = 3200
-LERP_SPEED = 100  # high speed for tests so lerp converges quickly
+LERP_SPEED = 100
 MIN_SPEED = 200
 
 
@@ -51,26 +51,6 @@ class TestCameraFollowsPlayer:
         assert viewport.origin_x == pytest.approx(500 - 2 * SCREEN_WIDTH / 3, abs=5)
 
 
-class TestCameraClampsToBounds:
-    def test_viewport_does_not_go_below_zero(self):
-        world = _create_world_with_camera(player_x=10, facing=FacingDirection.RIGHT)
-
-        for _ in range(60):
-            system_camera(world, 1.0 / 60, LERP_SPEED, MIN_SPEED, MIN_SPEED)
-
-        viewport = world.get_component(CViewport)[0][1]
-        assert viewport.origin_x == 0
-
-    def test_viewport_does_not_exceed_world_right(self):
-        world = _create_world_with_camera(player_x=3190, facing=FacingDirection.RIGHT, vel_x=100)
-
-        for _ in range(60):
-            system_camera(world, 1.0 / 60, LERP_SPEED, MIN_SPEED, MIN_SPEED)
-
-        viewport = world.get_component(CViewport)[0][1]
-        assert viewport.origin_x == WORLD_WIDTH - SCREEN_WIDTH
-
-
 class TestCameraLerp:
     def test_viewport_does_not_snap_instantly(self):
         world = _create_world_with_camera(player_x=500, facing=FacingDirection.RIGHT, vel_x=100)
@@ -85,9 +65,31 @@ class TestCameraLerp:
         world = _create_world_with_camera(player_x=500, facing=FacingDirection.RIGHT, vel_x=200)
         target = 500 - SCREEN_WIDTH / 3
 
-        # Very low lerp but high min_speed — should still reach target
         for _ in range(120):
             system_camera(world, 1.0 / 60, 0.1, 300, 200)
 
         viewport = world.get_component(CViewport)[0][1]
         assert viewport.origin_x == pytest.approx(target, abs=5)
+
+
+class TestCameraWorldWrap:
+    def test_camera_takes_shortest_path_across_boundary(self):
+        world = _create_world_with_camera(player_x=50, facing=FacingDirection.RIGHT, vel_x=100)
+        viewport = world.get_component(CViewport)[0][1]
+        viewport.origin_x = 3100
+
+        system_camera(world, 1.0 / 60, LERP_SPEED, MIN_SPEED, MIN_SPEED)
+
+        # Shortest path from 3100 to target (~-57) wraps forward, so origin increases
+        assert viewport.origin_x > 3100
+
+    def test_camera_does_not_clamp_at_world_edges(self):
+        world = _create_world_with_camera(player_x=10, facing=FacingDirection.RIGHT, vel_x=100)
+        viewport = world.get_component(CViewport)[0][1]
+        viewport.origin_x = -50
+
+        system_camera(world, 1.0 / 60, LERP_SPEED, MIN_SPEED, MIN_SPEED)
+
+        # Should move toward target, not clamp to 0
+        target = 10 - SCREEN_WIDTH / 3
+        assert viewport.origin_x != 0 or target == pytest.approx(0, abs=5)
