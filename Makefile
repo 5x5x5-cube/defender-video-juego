@@ -1,4 +1,4 @@
-.PHONY: install run clean build-exe build-web lint format help
+.PHONY: install run test clean build-exe build-web lint format help
 
 MAIN ?= main.py
 
@@ -10,6 +10,9 @@ install: ## Install dependencies with Poetry
 
 run: ## Run the game (MAIN=main.py by default)
 	poetry run python $(MAIN)
+
+test: ## Run unit tests
+	poetry run pytest tests/ -v
 
 clean: ## Remove build artifacts and caches
 	rm -rf build/ dist/ __pycache__ .pytest_cache *.spec
