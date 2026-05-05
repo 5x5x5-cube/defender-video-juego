@@ -59,7 +59,7 @@ def create_player_burner(world: esper.World, player_cfg: PlayerConfig,
 
 
 def create_input_commands(world: esper.World):
-    world.create_entity(CInputCommand("THRUST", pygame.K_RIGHT))
-    world.create_entity(CInputCommand("REVERSE", pygame.K_LEFT))
+    world.create_entity(CInputCommand("MOVE_RIGHT", pygame.K_RIGHT))
+    world.create_entity(CInputCommand("MOVE_LEFT", pygame.K_LEFT))
     world.create_entity(CInputCommand("MOVE_UP", pygame.K_UP))
     world.create_entity(CInputCommand("MOVE_DOWN", pygame.K_DOWN))

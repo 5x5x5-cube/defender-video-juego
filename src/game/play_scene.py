@@ -32,6 +32,7 @@ class PlayScene(Scene):
         create_player_burner(self.ecs_world, self._player_cfg,
                              self._player_cfg["initial_position"])
         create_input_commands(self.ecs_world)
+        self._held_horizontal: set[FacingDirection] = set()
 
     def do_process_events(self, event: pygame.event):
         system_input_player(self.ecs_world, event, self.do_action)
@@ -40,11 +41,12 @@ class PlayScene(Scene):
             self.switch_scene("GAME_OVER_SCENE")
 
     def do_action(self, c_input: CInputCommand):
-        if c_input.name == "THRUST":
-            self._set_player_thrust(c_input.phase == CommandPhase.START)
-        elif c_input.name == "REVERSE":
-            if c_input.phase == CommandPhase.START:
-                self._flip_player_direction()
+        if c_input.name == "MOVE_RIGHT":
+            self._set_player_horizontal(
+                FacingDirection.RIGHT, c_input.phase == CommandPhase.START)
+        elif c_input.name == "MOVE_LEFT":
+            self._set_player_horizontal(
+                FacingDirection.LEFT, c_input.phase == CommandPhase.START)
         elif c_input.name == "MOVE_UP":
             self._set_player_vertical(
                 VerticalDirection.UP if c_input.phase == CommandPhase.START
@@ -64,16 +66,21 @@ class PlayScene(Scene):
     def do_draw(self, screen):
         system_rendering(self.ecs_world, screen)
 
-    def _set_player_thrust(self, thrusting: bool):
-        for _, c_player_state in self.ecs_world.get_component(CPlayerState):
-            c_player_state.thrusting = thrusting
+    def _set_player_horizontal(self, direction: FacingDirection, pressed: bool):
+        if pressed:
+            self._held_horizontal.add(direction)
+        else:
+            self._held_horizontal.discard(direction)
 
-    def _flip_player_direction(self):
         for _, c_player_state in self.ecs_world.get_component(CPlayerState):
-            if c_player_state.facing == FacingDirection.RIGHT:
-                c_player_state.facing = FacingDirection.LEFT
+            if not self._held_horizontal:
+                c_player_state.moving_horizontal = False
+            elif c_player_state.moving_horizontal:
+                if direction not in self._held_horizontal:
+                    c_player_state.facing = next(iter(self._held_horizontal))
             else:
-                c_player_state.facing = FacingDirection.RIGHT
+                c_player_state.moving_horizontal = True
+                c_player_state.facing = direction
 
     def _set_player_vertical(self, direction: VerticalDirection):
         for _, c_player_state in self.ecs_world.get_component(CPlayerState):

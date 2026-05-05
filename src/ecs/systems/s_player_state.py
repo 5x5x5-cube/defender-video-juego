@@ -4,7 +4,6 @@ import pygame
 from src.ecs.components.c_player_state import CPlayerState, FacingDirection, VerticalDirection
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.c_surface import CSurface
-from src.ecs.components.tags.c_tag_player import CTagPlayer
 from src.ecs.load.load_world import PlayerConfig
 
 
@@ -19,15 +18,27 @@ def system_player_state(world: esper.World, delta_time: float,
 
 def _handle_horizontal(c_player_state: CPlayerState, c_velocity: CVelocity,
                        delta_time: float, player_cfg: PlayerConfig):
+    if not c_player_state.moving_horizontal:
+        _apply_deceleration(c_velocity, delta_time, player_cfg["deceleration"])
+        return
+
+    direction = c_player_state.facing.value
+    moving_against = (c_velocity.vel.x > 0 and direction < 0) or \
+                     (c_velocity.vel.x < 0 and direction > 0)
+
+    if moving_against:
+        _apply_deceleration(c_velocity, delta_time, player_cfg["reverse_deceleration"])
+    else:
+        _apply_acceleration(c_player_state, c_velocity, delta_time, player_cfg)
+
+
+def _apply_acceleration(c_player_state: CPlayerState, c_velocity: CVelocity,
+                        delta_time: float, player_cfg: PlayerConfig):
     direction = c_player_state.facing.value
     max_speed = player_cfg["max_speed"]
-
-    if c_player_state.thrusting:
-        c_velocity.vel.x += player_cfg["acceleration"] * direction * delta_time
-        if abs(c_velocity.vel.x) > max_speed:
-            c_velocity.vel.x = max_speed * direction
-    else:
-        _apply_deceleration(c_velocity, delta_time, player_cfg["deceleration"])
+    c_velocity.vel.x += player_cfg["acceleration"] * direction * delta_time
+    if abs(c_velocity.vel.x) > max_speed:
+        c_velocity.vel.x = max_speed * direction
 
 
 def _apply_deceleration(c_velocity: CVelocity, delta_time: float,

@@ -31,7 +31,7 @@ def _get_player_data(world: esper.World):
 
 def _update_burner_sprite(c_surface: CSurface, player_state: CPlayerState,
                           player_cfg: PlayerConfig):
-    if player_state.thrusting:
+    if player_state.moving_horizontal:
         new_surf = ServiceLocator.images_service.get(player_cfg["burner_moving_image"])
     else:
         new_surf = ServiceLocator.images_service.get(player_cfg["burner_idle_image"])

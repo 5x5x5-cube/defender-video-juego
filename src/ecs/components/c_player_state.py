@@ -15,5 +15,5 @@ class VerticalDirection(Enum):
 class CPlayerState:
     def __init__(self) -> None:
         self.facing = FacingDirection.RIGHT
-        self.thrusting = False
+        self.moving_horizontal = False
         self.vertical = VerticalDirection.NONE

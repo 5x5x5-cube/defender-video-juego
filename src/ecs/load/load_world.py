@@ -31,6 +31,7 @@ class PlayerConfig(TypedDict):
     burner_moving_image: str
     acceleration: float
     deceleration: float
+    reverse_deceleration: float
     max_speed: float
     vertical_speed: float
     initial_position: pygame.Vector2
@@ -87,6 +88,7 @@ def load_player_config(file_path: str) -> PlayerConfig:
         "burner_moving_image": data["burner_moving_image"],
         "acceleration": data["acceleration"],
         "deceleration": data["deceleration"],
+        "reverse_deceleration": data["reverse_deceleration"],
         "max_speed": data["max_speed"],
         "vertical_speed": data["vertical_speed"],
         "initial_position": pygame.Vector2(
