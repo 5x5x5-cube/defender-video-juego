@@ -10,6 +10,28 @@ class WindowConfig(TypedDict):
     framerate: int
 
 
+class BlinkRateConfig(TypedDict):
+    min: float
+    max: float
+
+
+class WorldConfig(TypedDict):
+    star_colors: list[pygame.Color]
+    stars_number: int
+    stars_parallax_factor: float
+    stars_blink_rate: BlinkRateConfig
+    planet_terrain_colors: list[pygame.Color]
+    planet_terrain_line_points: int
+    planet_parallax_factor: float
+
+
+class InterfaceConfig(TypedDict):
+    title_text_color: pygame.Color
+    normal_text_color: pygame.Color
+    high_score_color: pygame.Color
+    high_score_max_value: int
+
+
 def load_window_config(file_path: str) -> WindowConfig:
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -19,4 +41,50 @@ def load_window_config(file_path: str) -> WindowConfig:
         "size": pygame.Vector2(data["size"]["w"], data["size"]["h"]),
         "bg_color": pygame.Color(data["bg_color"]["r"], data["bg_color"]["g"], data["bg_color"]["b"]),
         "framerate": data["framerate"]
+    }
+
+
+def load_world_config(file_path: str) -> WorldConfig:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    return {
+        "star_colors": [
+            pygame.Color(c["r"], c["g"], c["b"]) for c in data["star_colors"]
+        ],
+        "stars_number": data["stars_number"],
+        "stars_parallax_factor": data["stars_parallax_factor"],
+        "stars_blink_rate": {
+            "min": data["stars_blink_rate"]["min"],
+            "max": data["stars_blink_rate"]["max"]
+        },
+        "planet_terrain_colors": [
+            pygame.Color(c["r"], c["g"], c["b"]) for c in data["planet_terrain_colors"]
+        ],
+        "planet_terrain_line_points": data["planet_terrain_line_points"],
+        "planet_parallax_factor": data["planet_parallax_factor"]
+    }
+
+
+def load_interface_config(file_path: str) -> InterfaceConfig:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    return {
+        "title_text_color": pygame.Color(
+            data["title_text_color"]["r"],
+            data["title_text_color"]["g"],
+            data["title_text_color"]["b"]
+        ),
+        "normal_text_color": pygame.Color(
+            data["normal_text_color"]["r"],
+            data["normal_text_color"]["g"],
+            data["normal_text_color"]["b"]
+        ),
+        "high_score_color": pygame.Color(
+            data["high_score_color"]["r"],
+            data["high_score_color"]["g"],
+            data["high_score_color"]["b"]
+        ),
+        "high_score_max_value": data["high_score_max_value"]
     }
