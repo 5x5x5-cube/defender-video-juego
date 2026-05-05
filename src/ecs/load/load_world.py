@@ -25,6 +25,23 @@ class WorldConfig(TypedDict):
     planet_parallax_factor: float
 
 
+class BurnerAnimConfig(TypedDict):
+    image: str
+    number_frames: int
+    list: list[dict]
+
+
+class PlayerConfig(TypedDict):
+    image: str
+    acceleration: float
+    deceleration: float
+    reverse_deceleration: float
+    max_speed: float
+    vertical_speed: float
+    initial_position: pygame.Vector2
+    animations: dict
+
+
 class InterfaceConfig(TypedDict):
     title_text_color: pygame.Color
     normal_text_color: pygame.Color
@@ -63,6 +80,25 @@ def load_world_config(file_path: str) -> WorldConfig:
         ],
         "planet_terrain_line_points": data["planet_terrain_line_points"],
         "planet_parallax_factor": data["planet_parallax_factor"]
+    }
+
+
+def load_player_config(file_path: str) -> PlayerConfig:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    return {
+        "image": data["image"],
+        "acceleration": data["acceleration"],
+        "deceleration": data["deceleration"],
+        "reverse_deceleration": data["reverse_deceleration"],
+        "max_speed": data["max_speed"],
+        "vertical_speed": data["vertical_speed"],
+        "initial_position": pygame.Vector2(
+            data["initial_position"]["x"],
+            data["initial_position"]["y"]
+        ),
+        "animations": data["animations"]
     }
 
 
