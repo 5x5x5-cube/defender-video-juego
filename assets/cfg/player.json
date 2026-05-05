@@ -1,7 +1,5 @@
 {
     "image": "assets/img/player.png",
-    "burner_idle_image": "assets/img/player_burner_idle.png",
-    "burner_moving_image": "assets/img/player_burner_moving.png",
     "acceleration": 150,
     "deceleration": 120,
     "reverse_deceleration": 300,
@@ -10,5 +8,23 @@
     "initial_position": {
         "x": 40,
         "y": 128
+    },
+    "animations": {
+        "burner": {
+            "idle": {
+                "image": "assets/img/player_burner_idle.png",
+                "number_frames": 3,
+                "list": [
+                    { "name": "idle", "start": 0, "end": 2, "framerate": 8 }
+                ]
+            },
+            "moving": {
+                "image": "assets/img/player_burner_moving.png",
+                "number_frames": 3,
+                "list": [
+                    { "name": "moving", "start": 0, "end": 2, "framerate": 12 }
+                ]
+            }
+        }
     }
 }

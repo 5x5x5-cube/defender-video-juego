@@ -11,7 +11,9 @@ from src.ecs.systems.s_input_player import system_input_player
 from src.ecs.systems.s_movement import system_movement
 from src.ecs.systems.s_player_state import system_player_state
 from src.ecs.systems.s_screen_player import system_screen_player
-from src.ecs.systems.s_player_burner import system_player_burner
+from src.ecs.systems.s_player_burner_state import system_player_burner_state
+from src.ecs.systems.s_player_burner_tracking import system_player_burner_tracking
+from src.ecs.systems.s_animation import system_animation
 
 
 class PlayScene(Scene):
@@ -60,7 +62,9 @@ class PlayScene(Scene):
         system_player_state(self.ecs_world, delta_time, self._player_cfg)
         system_movement(self.ecs_world, delta_time)
         system_screen_player(self.ecs_world, self.screen_rect)
-        system_player_burner(self.ecs_world, self._player_cfg)
+        system_player_burner_state(self.ecs_world, self._player_cfg)
+        system_animation(self.ecs_world, delta_time)
+        system_player_burner_tracking(self.ecs_world)
         system_star_blink(self.ecs_world, delta_time)
 
     def do_draw(self, screen):

@@ -3,6 +3,7 @@ import random
 import esper
 import pygame
 
+from src.ecs.components.c_animation import CAnimation
 from src.ecs.components.c_input_command import CInputCommand
 from src.ecs.components.c_player_state import CPlayerState
 from src.ecs.components.c_surface import CSurface
@@ -46,14 +47,21 @@ def create_player(world: esper.World, player_cfg: PlayerConfig) -> int:
 
 def create_player_burner(world: esper.World, player_cfg: PlayerConfig,
                          player_pos: pygame.Vector2) -> int:
-    burner_surface = ServiceLocator.images_service.get(player_cfg["burner_idle_image"])
+    burner_anim = player_cfg["animations"]["burner"]["idle"]
+    burner_surface = ServiceLocator.images_service.get(burner_anim["image"])
     burner_entity = world.create_entity()
+    frame_width = burner_surface.get_width() // burner_anim["number_frames"]
     burner_pos = pygame.Vector2(
-        player_pos.x - burner_surface.get_width(),
+        player_pos.x - frame_width,
         player_pos.y
     )
     world.add_component(burner_entity, CTransform(burner_pos))
-    world.add_component(burner_entity, CSurface.from_surface(burner_surface))
+    c_surface = CSurface.from_surface(burner_surface)
+    frame_width = burner_surface.get_width() // burner_anim["number_frames"]
+    c_surface.area = pygame.Rect(0, 0, frame_width, burner_surface.get_height())
+    world.add_component(burner_entity, c_surface)
+    world.add_component(burner_entity, CAnimation(
+        burner_anim["number_frames"], burner_anim["list"]))
     world.add_component(burner_entity, CTagPlayerBurner())
     return burner_entity
 
