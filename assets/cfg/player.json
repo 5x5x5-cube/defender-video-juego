@@ -1,0 +1,13 @@
+{
+    "image": "assets/img/player.png",
+    "burner_idle_image": "assets/img/player_burner_idle.png",
+    "burner_moving_image": "assets/img/player_burner_moving.png",
+    "acceleration": 120,
+    "deceleration": 80,
+    "max_speed": 100,
+    "vertical_speed": 80,
+    "initial_position": {
+        "x": 40,
+        "y": 128
+    }
+}
