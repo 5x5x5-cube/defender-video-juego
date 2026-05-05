@@ -23,6 +23,8 @@ class WorldConfig(TypedDict):
     planet_terrain_colors: list[pygame.Color]
     planet_terrain_line_points: int
     planet_parallax_factor: float
+    world_width: int
+    camera_lerp_speed: float
 
 
 class BurnerAnimConfig(TypedDict):
@@ -79,7 +81,9 @@ def load_world_config(file_path: str) -> WorldConfig:
             pygame.Color(c["r"], c["g"], c["b"]) for c in data["planet_terrain_colors"]
         ],
         "planet_terrain_line_points": data["planet_terrain_line_points"],
-        "planet_parallax_factor": data["planet_parallax_factor"]
+        "planet_parallax_factor": data["planet_parallax_factor"],
+        "world_width": data["world_width"],
+        "camera_lerp_speed": data["camera_lerp_speed"]
     }
 
 

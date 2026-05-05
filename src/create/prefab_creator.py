@@ -4,6 +4,7 @@ import esper
 import pygame
 
 from src.ecs.components.c_animation import CAnimation
+from src.ecs.components.c_viewport import CViewport
 from src.ecs.components.c_input_command import CInputCommand
 from src.ecs.components.c_player_state import CPlayerState
 from src.ecs.components.c_surface import CSurface
@@ -64,6 +65,13 @@ def create_player_burner(world: esper.World, player_cfg: PlayerConfig,
         burner_anim["number_frames"], burner_anim["list"]))
     world.add_component(burner_entity, CTagPlayerBurner())
     return burner_entity
+
+
+def create_viewport(world: esper.World, world_width: float,
+                    screen_width: float) -> int:
+    viewport_entity = world.create_entity()
+    world.add_component(viewport_entity, CViewport(world_width, screen_width))
+    return viewport_entity
 
 
 def create_input_commands(world: esper.World):

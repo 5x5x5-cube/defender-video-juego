@@ -16,7 +16,7 @@
             "b": 225
         }
     ],
-    "stars_number": 50,
+    "stars_number": 200,
     "stars_parallax_factor": 1.0,
     "stars_blink_rate": {
         "min": 0.25,
@@ -40,5 +40,7 @@
         }
     ],
     "planet_terrain_line_points": 50,
-    "planet_parallax_factor": 1.25
+    "planet_parallax_factor": 1.25,
+    "world_width": 3200,
+    "camera_lerp_speed": 1
 }

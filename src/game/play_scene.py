@@ -4,7 +4,8 @@ from src.engine.scenes.scene import Scene
 from src.ecs.load.load_world import load_world_config, load_player_config
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_player_state import CPlayerState, FacingDirection, VerticalDirection
-from src.create.prefab_creator import create_star, create_player, create_player_burner, create_input_commands
+from src.create.prefab_creator import (create_star, create_player,
+    create_player_burner, create_input_commands, create_viewport)
 from src.ecs.systems.s_star_blink import system_star_blink
 from src.ecs.systems.s_rendering import system_rendering
 from src.ecs.systems.s_input_player import system_input_player
@@ -14,6 +15,7 @@ from src.ecs.systems.s_screen_player import system_screen_player
 from src.ecs.systems.s_player_burner_state import system_player_burner_state
 from src.ecs.systems.s_player_burner_tracking import system_player_burner_tracking
 from src.ecs.systems.s_animation import system_animation
+from src.ecs.systems.s_camera import system_camera
 
 
 class PlayScene(Scene):
@@ -22,10 +24,13 @@ class PlayScene(Scene):
         self._world_cfg = load_world_config("assets/cfg/world.json")
         self._player_cfg = load_player_config("assets/cfg/player.json")
 
+        world_width = self._world_cfg["world_width"]
+        world_rect = pygame.Rect(0, 0, world_width, self.screen_rect.height)
+
         for _ in range(self._world_cfg["stars_number"]):
             create_star(
                 self.ecs_world,
-                self.screen_rect,
+                world_rect,
                 self._world_cfg["star_colors"],
                 self._world_cfg["stars_blink_rate"]
             )
@@ -33,6 +38,7 @@ class PlayScene(Scene):
         create_player(self.ecs_world, self._player_cfg)
         create_player_burner(self.ecs_world, self._player_cfg,
                              self._player_cfg["initial_position"])
+        create_viewport(self.ecs_world, world_width, self.screen_rect.width)
         create_input_commands(self.ecs_world)
         self._held_horizontal: set[FacingDirection] = set()
 
@@ -61,7 +67,12 @@ class PlayScene(Scene):
     def do_update(self, delta_time: float):
         system_player_state(self.ecs_world, delta_time, self._player_cfg)
         system_movement(self.ecs_world, delta_time)
-        system_screen_player(self.ecs_world, self.screen_rect)
+        system_screen_player(self.ecs_world, self.screen_rect,
+                             self._world_cfg["world_width"])
+        system_camera(self.ecs_world, delta_time,
+                      self._world_cfg["camera_lerp_speed"],
+                      self._player_cfg["max_speed"],
+                      self._player_cfg["max_speed"])
         system_player_burner_state(self.ecs_world, self._player_cfg)
         system_animation(self.ecs_world, delta_time)
         system_player_burner_tracking(self.ecs_world)
