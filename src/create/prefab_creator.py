@@ -105,15 +105,31 @@ def _generate_terrain_points(width: int, height: int,
 
     first_y = random.randint(min_y, max_y)
     y = first_y
+    return_start = int(num_points * 0.85)
     points = []
     for i in range(num_points - 1):
         x = int(i * spacing)
         points.append((x, y))
-        step = random.randint(-max_step, max_step)
+        step = _terrain_step(y, first_y, max_step, i, return_start, num_points, max_y)
         y = max(min_y, min(max_y, y + step))
     points.append((width, first_y))
 
     return points
+
+
+def _terrain_step(y: int, target_y: int, max_step: int,
+                  index: int, return_start: int, num_points: int,
+                  max_y: int) -> int:
+    floor_bias = 1 if y < max_y else -1
+    step = random.randint(-max_step, max_step) + floor_bias
+
+    if index >= return_start:
+        bias_strength = (index - return_start) / (num_points - 1 - return_start)
+        direction = 1 if target_y > y else -1
+        return_bias = int(max_step * bias_strength * direction)
+        step += return_bias
+
+    return max(-max_step * 2, min(max_step * 2, step))
 
 
 def create_input_commands(world: esper.World):
