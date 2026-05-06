@@ -11,6 +11,7 @@ WORLD_WIDTH = 3200
 SCREEN_HEIGHT = 256
 NUM_POINTS = 50
 COLOR = pygame.Color(255, 90, 90)
+BG_COLOR = pygame.Color(25, 25, 25)
 PARALLAX = 1.25
 
 
@@ -50,14 +51,14 @@ class TestTerrainEntity:
 
     def test_creates_entity_with_components(self):
         create_terrain(self.world, WORLD_WIDTH, SCREEN_HEIGHT,
-                       NUM_POINTS, COLOR, PARALLAX)
+                       NUM_POINTS, COLOR, BG_COLOR, PARALLAX)
 
         entities = self.world.get_components(CTransform, CSurface, CParallax)
         assert len(entities) == 1
 
     def test_surface_width_matches_parallax_world(self):
         create_terrain(self.world, WORLD_WIDTH, SCREEN_HEIGHT,
-                       NUM_POINTS, COLOR, PARALLAX)
+                       NUM_POINTS, COLOR, BG_COLOR, PARALLAX)
 
         for _, (_, c_surface, _) in self.world.get_components(
                 CTransform, CSurface, CParallax):
@@ -65,7 +66,7 @@ class TestTerrainEntity:
 
     def test_parallax_factor_set(self):
         create_terrain(self.world, WORLD_WIDTH, SCREEN_HEIGHT,
-                       NUM_POINTS, COLOR, PARALLAX)
+                       NUM_POINTS, COLOR, BG_COLOR, PARALLAX)
 
         for _, (_, _, c_parallax) in self.world.get_components(
                 CTransform, CSurface, CParallax):
@@ -73,7 +74,7 @@ class TestTerrainEntity:
 
     def test_positioned_at_origin(self):
         create_terrain(self.world, WORLD_WIDTH, SCREEN_HEIGHT,
-                       NUM_POINTS, COLOR, PARALLAX)
+                       NUM_POINTS, COLOR, BG_COLOR, PARALLAX)
 
         for _, (c_transform, _, _) in self.world.get_components(
                 CTransform, CSurface, CParallax):

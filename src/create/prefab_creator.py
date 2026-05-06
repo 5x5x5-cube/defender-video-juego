@@ -83,12 +83,15 @@ def create_viewport(world: esper.World, world_width: float,
 
 def create_terrain(world: esper.World, world_width: float,
                    screen_height: int, num_points: int,
-                   color: pygame.Color, parallax_factor: float) -> int:
+                   color: pygame.Color, bg_color: pygame.Color,
+                   parallax_factor: float) -> int:
     terrain_width = int(world_width * parallax_factor)
     terrain_height = screen_height
     points = _generate_terrain_points(terrain_width, terrain_height, num_points)
 
     surface = pygame.Surface((terrain_width, terrain_height), pygame.SRCALPHA)
+    fill_points = points + [(terrain_width, terrain_height), (0, terrain_height)]
+    pygame.draw.polygon(surface, bg_color, fill_points)
     pygame.draw.lines(surface, color, False, points)
 
     terrain_entity = world.create_entity()

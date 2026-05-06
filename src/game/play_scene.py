@@ -1,7 +1,7 @@
 import pygame
 
 from src.engine.scenes.scene import Scene
-from src.ecs.load.load_world import load_world_config, load_player_config, load_bullet_config
+from src.ecs.load.load_world import load_world_config, load_player_config, load_bullet_config, load_window_config
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_player_state import CPlayerState, FacingDirection, VerticalDirection
 from src.ecs.components.c_transform import CTransform
@@ -29,6 +29,7 @@ from src.engine.service_locator import ServiceLocator
 class PlayScene(Scene):
 
     def do_create(self):
+        self._window_cfg = load_window_config("assets/cfg/window.json")
         self._world_cfg = load_world_config("assets/cfg/world.json")
         self._player_cfg = load_player_config("assets/cfg/player.json")
         self._bullet_cfg = load_bullet_config("assets/cfg/bullet.json")
@@ -51,6 +52,7 @@ class PlayScene(Scene):
             self.screen_rect.height,
             self._world_cfg["planet_terrain_line_points"],
             self._world_cfg["planet_terrain_colors"][0],
+            self._window_cfg["bg_color"],
             self._world_cfg["planet_parallax_factor"]
         )
 
