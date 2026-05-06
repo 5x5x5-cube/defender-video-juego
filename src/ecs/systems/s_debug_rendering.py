@@ -44,13 +44,7 @@ def _collect_debug_info(world: esper.World) -> list[str]:
             diff = _camera_diff(c_viewport, player_x, facing)
             threshold = c_viewport.screen_width / 2
             blend = min(abs(diff) / threshold, 1.0) if threshold > 0 else 0
-            screen_pos = player_x - c_viewport.origin_x
-            if c_viewport.world_width > 0:
-                half = c_viewport.world_width / 2
-                if screen_pos < -half:
-                    screen_pos += c_viewport.world_width
-                elif screen_pos > half:
-                    screen_pos -= c_viewport.world_width
+            screen_pos = c_viewport.world_to_screen_x(player_x)
             lines.append(f"cam_diff: {diff:.1f}")
             lines.append(f"transition: {c_viewport.in_transition}")
             lines.append(f"delay: {c_viewport.transition_timer:.2f}")

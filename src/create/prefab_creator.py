@@ -13,8 +13,10 @@ from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.c_star_blink import CStarBlink
 from src.ecs.components.tags.c_tag_player import CTagPlayer
+from src.ecs.components.tags.c_tag_bullet import CTagBullet
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
-from src.ecs.load.load_world import BlinkRateConfig, PlayerConfig
+from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, PlayerConfig
+from src.ecs.components.c_player_state import FacingDirection
 from src.engine.service_locator import ServiceLocator
 
 
@@ -81,12 +83,15 @@ def create_viewport(world: esper.World, world_width: float,
 
 def create_terrain(world: esper.World, world_width: float,
                    screen_height: int, num_points: int,
-                   color: pygame.Color, parallax_factor: float) -> int:
+                   color: pygame.Color, bg_color: pygame.Color,
+                   parallax_factor: float) -> int:
     terrain_width = int(world_width * parallax_factor)
     terrain_height = screen_height
     points = _generate_terrain_points(terrain_width, terrain_height, num_points)
 
     surface = pygame.Surface((terrain_width, terrain_height), pygame.SRCALPHA)
+    fill_points = points + [(terrain_width, terrain_height), (0, terrain_height)]
+    pygame.draw.polygon(surface, bg_color, fill_points)
     pygame.draw.lines(surface, color, False, points)
 
     terrain_entity = world.create_entity()
@@ -132,8 +137,52 @@ def _terrain_step(y: int, target_y: int, max_step: int,
     return max(-max_step * 2, min(max_step * 2, step))
 
 
+def create_bullet(world: esper.World, player_pos: pygame.Vector2,
+                  player_width: int, player_height: int,
+                  facing: FacingDirection, bullet_cfg: BulletConfig) -> int:
+    bullet_w = bullet_cfg["width"]
+    bullet_h = bullet_cfg["height"]
+    speed = bullet_cfg["speed"] * facing.value
+
+    if facing == FacingDirection.RIGHT:
+        bullet_x = player_pos.x + player_width
+    else:
+        bullet_x = player_pos.x - bullet_w
+
+    bullet_y = player_pos.y + player_height // 2 - bullet_h // 2
+    surface = _create_laser_surface(bullet_w, bullet_h, facing)
+
+    bullet_entity = world.create_entity()
+    world.add_component(bullet_entity, CTransform(pygame.Vector2(bullet_x, bullet_y)))
+    world.add_component(bullet_entity, CVelocity(pygame.Vector2(speed, 0)))
+    world.add_component(bullet_entity, CSurface.from_surface(surface))
+    world.add_component(bullet_entity, CTagBullet())
+    return bullet_entity
+
+
+def _create_laser_surface(width: int, height: int,
+                          facing: FacingDirection) -> pygame.Surface:
+    surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    tip_color = pygame.Color(255, 255, 255)
+    trail_color = pygame.Color(0, 255, 0)
+
+    for x in range(width):
+        if facing == FacingDirection.RIGHT:
+            t = x / max(1, width - 1)
+        else:
+            t = 1 - x / max(1, width - 1)
+        r = int(trail_color.r + (tip_color.r - trail_color.r) * t)
+        g = int(trail_color.g + (tip_color.g - trail_color.g) * t)
+        b = int(trail_color.b + (tip_color.b - trail_color.b) * t)
+        for y in range(height):
+            surface.set_at((x, y), pygame.Color(r, g, b))
+
+    return surface
+
+
 def create_input_commands(world: esper.World):
     world.create_entity(CInputCommand("MOVE_RIGHT", pygame.K_RIGHT))
     world.create_entity(CInputCommand("MOVE_LEFT", pygame.K_LEFT))
     world.create_entity(CInputCommand("MOVE_UP", pygame.K_UP))
     world.create_entity(CInputCommand("MOVE_DOWN", pygame.K_DOWN))
+    world.create_entity(CInputCommand("FIRE", pygame.K_s))

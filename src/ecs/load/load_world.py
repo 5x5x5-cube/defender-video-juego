@@ -29,6 +29,13 @@ class WorldConfig(TypedDict):
     camera_transition_delay: float
 
 
+class BulletConfig(TypedDict):
+    speed: float
+    max_count: int
+    width: int
+    height: int
+
+
 class BurnerAnimConfig(TypedDict):
     image: str
     number_frames: int
@@ -107,6 +114,18 @@ def load_player_config(file_path: str) -> PlayerConfig:
             data["initial_position"]["y"]
         ),
         "animations": data["animations"]
+    }
+
+
+def load_bullet_config(file_path: str) -> BulletConfig:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    return {
+        "speed": data["speed"],
+        "max_count": data["max_count"],
+        "width": data["width"],
+        "height": data["height"]
     }
 
 
