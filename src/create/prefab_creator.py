@@ -5,6 +5,7 @@ import pygame
 
 from src.ecs.components.c_animation import CAnimation
 from src.ecs.components.c_parallax import CParallax
+from src.ecs.components.c_terrain import CTerrain
 from src.ecs.components.c_viewport import CViewport
 from src.ecs.components.c_input_command import CInputCommand
 from src.ecs.components.c_player_state import CPlayerState
@@ -13,7 +14,9 @@ from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.c_star_blink import CStarBlink
 from src.ecs.components.tags.c_tag_player import CTagPlayer
+from src.ecs.components.c_humanoid_state import CHumanoidState
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
+from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
 from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, PlayerConfig
 from src.ecs.components.c_player_state import FacingDirection
@@ -98,13 +101,14 @@ def create_terrain(world: esper.World, world_width: float,
     world.add_component(terrain_entity, CTransform(pygame.Vector2(0, 0)))
     world.add_component(terrain_entity, CSurface.from_surface(surface))
     world.add_component(terrain_entity, CParallax(parallax_factor))
+    world.add_component(terrain_entity, CTerrain(points))
     return terrain_entity
 
 
 def _generate_terrain_points(width: int, height: int,
                              num_points: int) -> list[tuple[int, int]]:
-    min_y = int(height * 0.75)
-    max_y = height - 5
+    min_y = int(height * 0.65)
+    max_y = height - 30
     max_step = max(1, (max_y - min_y) // 8)
     spacing = width / (num_points - 1) if num_points > 1 else width
 
@@ -178,6 +182,49 @@ def _create_laser_surface(width: int, height: int,
             surface.set_at((x, y), pygame.Color(r, g, b))
 
     return surface
+
+
+def create_humanoid(world: esper.World, world_x: float,
+                    screen_height: int, c_terrain: CTerrain,
+                    parallax_factor: float) -> int:
+    parallax_x = world_x * parallax_factor
+    humanoid_surface = ServiceLocator.images_service.get("assets/img/astronaut.png")
+    num_frames = 3
+    frame_width = humanoid_surface.get_width() // num_frames
+    humanoid_height = humanoid_surface.get_height()
+    terrain_y = c_terrain.surface_height_at(parallax_x)
+    min_y = terrain_y
+    max_y = screen_height - humanoid_height
+    pos_y = random.uniform(min_y, max_y) if max_y > min_y else min_y
+
+    humanoid_entity = world.create_entity()
+    world.add_component(humanoid_entity, CTransform(pygame.Vector2(parallax_x, pos_y)))
+    world.add_component(humanoid_entity, CVelocity(pygame.Vector2(0, 0)))
+    c_surface = CSurface.from_surface(humanoid_surface)
+    c_surface.area = pygame.Rect(0, 0, frame_width, humanoid_height)
+    world.add_component(humanoid_entity, c_surface)
+    world.add_component(humanoid_entity, CAnimation(num_frames,
+        [{"name": "walk", "start": 0, "end": 2, "framerate": 4}]))
+    world.add_component(humanoid_entity, CHumanoidState(parallax_x))
+    world.add_component(humanoid_entity, CParallax(parallax_factor))
+    world.add_component(humanoid_entity, CTagHumanoid())
+    return humanoid_entity
+
+
+def create_humanoids(world: esper.World, world_width: float,
+                     screen_height: int, count: int):
+    c_terrain = None
+    parallax_factor = 1.0
+    for _, (terrain, parallax) in world.get_components(CTerrain, CParallax):
+        c_terrain = terrain
+        parallax_factor = parallax.factor
+        break
+    if c_terrain is None:
+        return
+
+    for _ in range(count):
+        world_x = random.uniform(0, world_width)
+        create_humanoid(world, world_x, screen_height, c_terrain, parallax_factor)
 
 
 def create_input_commands(world: esper.World):
