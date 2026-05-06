@@ -13,8 +13,10 @@ from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.c_star_blink import CStarBlink
 from src.ecs.components.tags.c_tag_player import CTagPlayer
+from src.ecs.components.tags.c_tag_bullet import CTagBullet
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
-from src.ecs.load.load_world import BlinkRateConfig, PlayerConfig
+from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, PlayerConfig
+from src.ecs.components.c_player_state import FacingDirection
 from src.engine.service_locator import ServiceLocator
 
 
@@ -132,8 +134,33 @@ def _terrain_step(y: int, target_y: int, max_step: int,
     return max(-max_step * 2, min(max_step * 2, step))
 
 
+def create_bullet(world: esper.World, player_pos: pygame.Vector2,
+                  player_width: int, player_height: int,
+                  facing: FacingDirection, bullet_cfg: BulletConfig) -> int:
+    bullet_w = bullet_cfg["width"]
+    bullet_h = bullet_cfg["height"]
+    speed = bullet_cfg["speed"] * facing.value
+
+    if facing == FacingDirection.RIGHT:
+        bullet_x = player_pos.x + player_width
+    else:
+        bullet_x = player_pos.x - bullet_w
+
+    bullet_y = player_pos.y + player_height // 2 - bullet_h // 2
+
+    bullet_entity = world.create_entity()
+    world.add_component(bullet_entity, CTransform(pygame.Vector2(bullet_x, bullet_y)))
+    world.add_component(bullet_entity, CVelocity(pygame.Vector2(speed, 0)))
+    world.add_component(bullet_entity,
+                        CSurface(pygame.Vector2(bullet_w, bullet_h),
+                                 pygame.Color(255, 255, 255)))
+    world.add_component(bullet_entity, CTagBullet())
+    return bullet_entity
+
+
 def create_input_commands(world: esper.World):
     world.create_entity(CInputCommand("MOVE_RIGHT", pygame.K_RIGHT))
     world.create_entity(CInputCommand("MOVE_LEFT", pygame.K_LEFT))
     world.create_entity(CInputCommand("MOVE_UP", pygame.K_UP))
     world.create_entity(CInputCommand("MOVE_DOWN", pygame.K_DOWN))
+    world.create_entity(CInputCommand("FIRE", pygame.K_s))
