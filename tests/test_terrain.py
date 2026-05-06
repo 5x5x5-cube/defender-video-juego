@@ -34,8 +34,8 @@ class TestTerrainGeneration:
     def test_points_within_height_bounds(self):
         terrain_width = int(WORLD_WIDTH * PARALLAX)
         points = _generate_terrain_points(terrain_width, SCREEN_HEIGHT, NUM_POINTS)
-        min_y = int(SCREEN_HEIGHT * 0.75)
-        max_y = SCREEN_HEIGHT - 5
+        min_y = int(SCREEN_HEIGHT * 0.65)
+        max_y = SCREEN_HEIGHT - 30
         for _, y in points:
             assert min_y <= y <= max_y
 

@@ -29,6 +29,13 @@ class WorldConfig(TypedDict):
     camera_transition_delay: float
 
 
+class HumanoidConfig(TypedDict):
+    count: int
+    wander_speed: float
+    wander_range: float
+    direction_change_chance: float
+
+
 class BulletConfig(TypedDict):
     speed: float
     max_count: int
@@ -114,6 +121,18 @@ def load_player_config(file_path: str) -> PlayerConfig:
             data["initial_position"]["y"]
         ),
         "animations": data["animations"]
+    }
+
+
+def load_humanoid_config(file_path: str) -> HumanoidConfig:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    return {
+        "count": data["count"],
+        "wander_speed": data["wander_speed"],
+        "wander_range": data["wander_range"],
+        "direction_change_chance": data["direction_change_chance"]
     }
 
 
