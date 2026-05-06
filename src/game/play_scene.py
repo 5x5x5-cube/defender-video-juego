@@ -69,15 +69,22 @@ class PlayScene(Scene):
         create_input_commands(self.ecs_world)
         self._held_horizontal: set[FacingDirection] = set()
         self._debug_enabled = False
+        self._paused = False
 
     def do_process_events(self, event: pygame.event):
-        system_input_player(self.ecs_world, event, self.do_action)
-
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.switch_scene("GAME_OVER_SCENE")
+                return
+            elif event.key == pygame.K_p:
+                self._toggle_pause()
+                return
             elif event.key == pygame.K_TAB:
                 self._debug_enabled = not self._debug_enabled
+                return
+
+        if not self._paused:
+            system_input_player(self.ecs_world, event, self.do_action)
 
     def do_action(self, c_input: CInputCommand):
         if c_input.name == "MOVE_RIGHT":
@@ -99,6 +106,8 @@ class PlayScene(Scene):
                 self._fire_bullet()
 
     def do_update(self, delta_time: float):
+        if self._paused:
+            return
         system_player_state(self.ecs_world, delta_time, self._player_cfg)
         system_movement(self.ecs_world, delta_time)
         system_screen_player(self.ecs_world, self.screen_rect,
@@ -116,6 +125,8 @@ class PlayScene(Scene):
 
     def do_draw(self, screen):
         system_rendering(self.ecs_world, screen)
+        if self._paused:
+            self._draw_pause_overlay(screen)
         if self._debug_enabled:
             system_debug_rendering(self.ecs_world, screen)
 
@@ -155,4 +166,16 @@ class PlayScene(Scene):
     def _set_player_vertical(self, direction: VerticalDirection):
         for _, c_player_state in self.ecs_world.get_component(CPlayerState):
             c_player_state.vertical = direction
+
+    def _toggle_pause(self):
+        self._paused = not self._paused
+        if self._paused:
+            ServiceLocator.sounds_service.play("assets/snd/game_paused.ogg")
+
+    def _draw_pause_overlay(self, screen):
+        font = ServiceLocator.fonts_service.get("assets/fnt/PressStart2P.ttf", 16)
+        text = font.render("PAUSED", False, pygame.Color(255, 255, 255))
+        text_rect = text.get_rect(center=(self.screen_rect.centerx,
+                                          self.screen_rect.centery))
+        screen.blit(text, text_rect)
 

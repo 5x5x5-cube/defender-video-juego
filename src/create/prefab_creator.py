@@ -153,7 +153,7 @@ def create_bullet(world: esper.World, player_pos: pygame.Vector2,
     else:
         bullet_x = player_pos.x - bullet_w
 
-    bullet_y = player_pos.y + player_height // 2 - bullet_h // 2
+    bullet_y = round(player_pos.y) + player_height // 2 - bullet_h // 2
     surface = _create_laser_surface(bullet_w, bullet_h, facing)
 
     bullet_entity = world.create_entity()
