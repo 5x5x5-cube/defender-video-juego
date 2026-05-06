@@ -77,8 +77,8 @@ class PlayScene(Scene):
                              self._world_cfg["world_width"])
         system_camera(self.ecs_world, delta_time,
                       self._world_cfg["camera_lerp_speed"],
-                      self._player_cfg["max_speed"],
-                      self._player_cfg["max_speed"])
+                      self._world_cfg["camera_transition_lerp_speed"],
+                      self._world_cfg["camera_transition_delay"])
         system_player_burner_state(self.ecs_world, self._player_cfg)
         system_animation(self.ecs_world, delta_time)
         system_player_burner_tracking(self.ecs_world)
