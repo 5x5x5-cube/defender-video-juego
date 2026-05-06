@@ -5,7 +5,7 @@ from src.ecs.load.load_world import load_world_config, load_player_config
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_player_state import CPlayerState, FacingDirection, VerticalDirection
 from src.create.prefab_creator import (create_star, create_player,
-    create_player_burner, create_input_commands, create_viewport)
+    create_player_burner, create_input_commands, create_viewport, create_terrain)
 from src.ecs.systems.s_star_blink import system_star_blink
 from src.ecs.systems.s_rendering import system_rendering
 from src.ecs.systems.s_input_player import system_input_player
@@ -26,15 +26,25 @@ class PlayScene(Scene):
         self._player_cfg = load_player_config("assets/cfg/player.json")
 
         world_width = self._world_cfg["world_width"]
-        world_rect = pygame.Rect(0, 0, world_width, self.screen_rect.height)
 
         for _ in range(self._world_cfg["stars_number"]):
             create_star(
                 self.ecs_world,
-                world_rect,
+                world_width,
+                self.screen_rect.height,
                 self._world_cfg["star_colors"],
-                self._world_cfg["stars_blink_rate"]
+                self._world_cfg["stars_blink_rate"],
+                self._world_cfg["stars_parallax_factor"]
             )
+
+        create_terrain(
+            self.ecs_world,
+            world_width,
+            self.screen_rect.height,
+            self._world_cfg["planet_terrain_line_points"],
+            self._world_cfg["planet_terrain_colors"][0],
+            self._world_cfg["planet_parallax_factor"]
+        )
 
         create_player(self.ecs_world, self._player_cfg)
         create_player_burner(self.ecs_world, self._player_cfg,
@@ -76,8 +86,8 @@ class PlayScene(Scene):
                              self._world_cfg["world_width"])
         system_camera(self.ecs_world, delta_time,
                       self._world_cfg["camera_lerp_speed"],
-                      self._player_cfg["max_speed"],
-                      self._player_cfg["max_speed"])
+                      self._world_cfg["camera_transition_lerp_speed"],
+                      self._world_cfg["camera_transition_delay"])
         system_player_burner_state(self.ecs_world, self._player_cfg)
         system_animation(self.ecs_world, delta_time)
         system_player_burner_tracking(self.ecs_world)

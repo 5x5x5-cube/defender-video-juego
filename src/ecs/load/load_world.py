@@ -25,6 +25,8 @@ class WorldConfig(TypedDict):
     planet_parallax_factor: float
     world_width: int
     camera_lerp_speed: float
+    camera_transition_lerp_speed: float
+    camera_transition_delay: float
 
 
 class BurnerAnimConfig(TypedDict):
@@ -83,7 +85,9 @@ def load_world_config(file_path: str) -> WorldConfig:
         "planet_terrain_line_points": data["planet_terrain_line_points"],
         "planet_parallax_factor": data["planet_parallax_factor"],
         "world_width": data["world_width"],
-        "camera_lerp_speed": data["camera_lerp_speed"]
+        "camera_lerp_speed": data["camera_lerp_speed"],
+        "camera_transition_lerp_speed": data["camera_transition_lerp_speed"],
+        "camera_transition_delay": data["camera_transition_delay"]
     }
 
 

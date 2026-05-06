@@ -1,9 +1,9 @@
 {
     "image": "assets/img/player.png",
-    "acceleration": 150,
+    "acceleration": 200,
     "deceleration": 120,
     "reverse_deceleration": 300,
-    "max_speed": 200,
+    "max_speed": 350,
     "vertical_speed": 100,
     "initial_position": {
         "x": 40,

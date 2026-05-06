@@ -25,9 +25,13 @@ def system_debug_rendering(world: esper.World, screen: pygame.Surface):
 
 def _collect_debug_info(world: esper.World) -> list[str]:
     lines = []
+    player_x = None
+    facing = None
 
     for _, (c_transform, c_velocity, c_player_state, _) in world.get_components(
             CTransform, CVelocity, CPlayerState, CTagPlayer):
+        player_x = c_transform.pos.x
+        facing = c_player_state.facing
         lines.append(f"pos: ({c_transform.pos.x:.0f}, {c_transform.pos.y:.0f})")
         lines.append(f"vel: ({c_velocity.vel.x:.1f}, {c_velocity.vel.y:.1f})")
         lines.append(f"speed: {abs(c_velocity.vel.x):.1f}")
@@ -36,8 +40,39 @@ def _collect_debug_info(world: esper.World) -> list[str]:
 
     for _, c_viewport in world.get_component(CViewport):
         lines.append(f"cam: {c_viewport.origin_x:.0f}")
+        if player_x is not None:
+            diff = _camera_diff(c_viewport, player_x, facing)
+            threshold = c_viewport.screen_width / 2
+            blend = min(abs(diff) / threshold, 1.0) if threshold > 0 else 0
+            screen_pos = player_x - c_viewport.origin_x
+            if c_viewport.world_width > 0:
+                half = c_viewport.world_width / 2
+                if screen_pos < -half:
+                    screen_pos += c_viewport.world_width
+                elif screen_pos > half:
+                    screen_pos -= c_viewport.world_width
+            lines.append(f"cam_diff: {diff:.1f}")
+            lines.append(f"transition: {c_viewport.in_transition}")
+            lines.append(f"delay: {c_viewport.transition_timer:.2f}")
+            lines.append(f"ship_vp_x: {screen_pos:.0f}")
 
     return lines
+
+
+def _camera_diff(c_viewport: CViewport, player_x: float, facing) -> float:
+    from src.ecs.components.c_player_state import FacingDirection
+    if facing == FacingDirection.RIGHT:
+        target = player_x - c_viewport.screen_width / 4
+    else:
+        target = player_x - 3 * c_viewport.screen_width / 4
+    diff = target - c_viewport.origin_x
+    if c_viewport.world_width > 0:
+        half = c_viewport.world_width / 2
+        if diff < -half:
+            diff += c_viewport.world_width
+        elif diff > half:
+            diff -= c_viewport.world_width
+    return diff
 
 
 def _draw_debug_panel(screen: pygame.Surface, lines: list[str]):
