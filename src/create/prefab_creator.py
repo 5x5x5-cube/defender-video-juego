@@ -79,6 +79,43 @@ def create_viewport(world: esper.World, world_width: float,
     return viewport_entity
 
 
+def create_terrain(world: esper.World, world_width: float,
+                   screen_height: int, num_points: int,
+                   color: pygame.Color, parallax_factor: float) -> int:
+    terrain_width = int(world_width * parallax_factor)
+    terrain_height = screen_height
+    points = _generate_terrain_points(terrain_width, terrain_height, num_points)
+
+    surface = pygame.Surface((terrain_width, terrain_height), pygame.SRCALPHA)
+    pygame.draw.lines(surface, color, False, points)
+
+    terrain_entity = world.create_entity()
+    world.add_component(terrain_entity, CTransform(pygame.Vector2(0, 0)))
+    world.add_component(terrain_entity, CSurface.from_surface(surface))
+    world.add_component(terrain_entity, CParallax(parallax_factor))
+    return terrain_entity
+
+
+def _generate_terrain_points(width: int, height: int,
+                             num_points: int) -> list[tuple[int, int]]:
+    min_y = int(height * 0.75)
+    max_y = height - 5
+    max_step = max(1, (max_y - min_y) // 8)
+    spacing = width / (num_points - 1) if num_points > 1 else width
+
+    first_y = random.randint(min_y, max_y)
+    y = first_y
+    points = []
+    for i in range(num_points - 1):
+        x = int(i * spacing)
+        points.append((x, y))
+        step = random.randint(-max_step, max_step)
+        y = max(min_y, min(max_y, y + step))
+    points.append((width, first_y))
+
+    return points
+
+
 def create_input_commands(world: esper.World):
     world.create_entity(CInputCommand("MOVE_RIGHT", pygame.K_RIGHT))
     world.create_entity(CInputCommand("MOVE_LEFT", pygame.K_LEFT))
