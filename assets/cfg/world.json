@@ -17,7 +17,7 @@
         }
     ],
     "stars_number": 200,
-    "stars_parallax_factor": 1.0,
+    "stars_parallax_factor": 0.2,
     "stars_blink_rate": {
         "min": 0.25,
         "max": 0.5

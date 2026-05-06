@@ -1,6 +1,7 @@
 import esper
 import pygame
 
+from src.ecs.components.c_parallax import CParallax
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.c_viewport import CViewport
@@ -9,9 +10,12 @@ from src.ecs.components.c_viewport import CViewport
 def system_rendering(world: esper.World, screen: pygame.Surface):
     viewport_origin_x, world_width = _get_viewport_data(world)
     screen_rect = screen.get_rect()
-    for _, (c_transform, c_surface) in world.get_components(CTransform, CSurface):
+    for entity, (c_transform, c_surface) in world.get_components(CTransform, CSurface):
+        parallax_factor = _get_parallax_factor(world, entity)
+        effective_origin = viewport_origin_x * parallax_factor
+        effective_world_width = world_width * parallax_factor
         draw_x = _screen_position_in_circular_world(
-            c_transform.pos.x, viewport_origin_x, world_width)
+            c_transform.pos.x, effective_origin, effective_world_width)
         draw_y = c_transform.pos.y
         if draw_x + c_surface.area.width < 0 or draw_x > screen_rect.width:
             continue
@@ -22,6 +26,12 @@ def _get_viewport_data(world: esper.World) -> tuple[float, float]:
     for _, c_viewport in world.get_component(CViewport):
         return c_viewport.origin_x, c_viewport.world_width
     return 0.0, 0.0
+
+
+def _get_parallax_factor(world: esper.World, entity: int) -> float:
+    if world.has_component(entity, CParallax):
+        return world.component_for_entity(entity, CParallax).factor
+    return 1.0
 
 
 def _screen_position_in_circular_world(entity_x: float, viewport_origin_x: float,

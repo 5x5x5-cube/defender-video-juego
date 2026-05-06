@@ -4,6 +4,7 @@ import esper
 import pygame
 
 from src.ecs.components.c_animation import CAnimation
+from src.ecs.components.c_parallax import CParallax
 from src.ecs.components.c_viewport import CViewport
 from src.ecs.components.c_input_command import CInputCommand
 from src.ecs.components.c_player_state import CPlayerState
@@ -18,13 +19,16 @@ from src.engine.service_locator import ServiceLocator
 
 
 def create_star(world: esper.World,
-                screen_rect: pygame.Rect,
+                world_width: float,
+                screen_height: int,
                 star_colors: list[pygame.Color],
-                blink_rate_cfg: BlinkRateConfig) -> int:
+                blink_rate_cfg: BlinkRateConfig,
+                parallax_factor: float) -> int:
     color = random.choice(star_colors)
+    parallax_width = world_width * parallax_factor
     pos = pygame.Vector2(
-        random.randint(0, screen_rect.width - 1),
-        random.randint(0, screen_rect.height - 1)
+        random.uniform(0, parallax_width),
+        random.randint(0, screen_height - 1)
     )
     rate = random.uniform(blink_rate_cfg["min"], blink_rate_cfg["max"])
 
@@ -32,6 +36,7 @@ def create_star(world: esper.World,
     world.add_component(star_entity, CTransform(pos))
     world.add_component(star_entity, CSurface(pygame.Vector2(1, 1), color))
     world.add_component(star_entity, CStarBlink(rate, color))
+    world.add_component(star_entity, CParallax(parallax_factor))
     return star_entity
 
 

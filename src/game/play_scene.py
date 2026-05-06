@@ -26,14 +26,15 @@ class PlayScene(Scene):
         self._player_cfg = load_player_config("assets/cfg/player.json")
 
         world_width = self._world_cfg["world_width"]
-        world_rect = pygame.Rect(0, 0, world_width, self.screen_rect.height)
 
         for _ in range(self._world_cfg["stars_number"]):
             create_star(
                 self.ecs_world,
-                world_rect,
+                world_width,
+                self.screen_rect.height,
                 self._world_cfg["star_colors"],
-                self._world_cfg["stars_blink_rate"]
+                self._world_cfg["stars_blink_rate"],
+                self._world_cfg["stars_parallax_factor"]
             )
 
         create_player(self.ecs_world, self._player_cfg)
