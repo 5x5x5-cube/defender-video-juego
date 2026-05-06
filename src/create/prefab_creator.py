@@ -147,15 +147,34 @@ def create_bullet(world: esper.World, player_pos: pygame.Vector2,
         bullet_x = player_pos.x - bullet_w
 
     bullet_y = player_pos.y + player_height // 2 - bullet_h // 2
+    surface = _create_laser_surface(bullet_w, bullet_h, facing)
 
     bullet_entity = world.create_entity()
     world.add_component(bullet_entity, CTransform(pygame.Vector2(bullet_x, bullet_y)))
     world.add_component(bullet_entity, CVelocity(pygame.Vector2(speed, 0)))
-    world.add_component(bullet_entity,
-                        CSurface(pygame.Vector2(bullet_w, bullet_h),
-                                 pygame.Color(255, 255, 255)))
+    world.add_component(bullet_entity, CSurface.from_surface(surface))
     world.add_component(bullet_entity, CTagBullet())
     return bullet_entity
+
+
+def _create_laser_surface(width: int, height: int,
+                          facing: FacingDirection) -> pygame.Surface:
+    surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    tip_color = pygame.Color(255, 255, 255)
+    trail_color = pygame.Color(0, 255, 0)
+
+    for x in range(width):
+        if facing == FacingDirection.RIGHT:
+            t = x / max(1, width - 1)
+        else:
+            t = 1 - x / max(1, width - 1)
+        r = int(trail_color.r + (tip_color.r - trail_color.r) * t)
+        g = int(trail_color.g + (tip_color.g - trail_color.g) * t)
+        b = int(trail_color.b + (tip_color.b - trail_color.b) * t)
+        for y in range(height):
+            surface.set_at((x, y), pygame.Color(r, g, b))
+
+    return surface
 
 
 def create_input_commands(world: esper.World):
