@@ -14,5 +14,13 @@
         "g": 144,
         "b": 255
     },
-    "high_score_max_value": 1000
+    "high_score_max_value": 1000,
+    "hud_height": 36,
+    "hud_line_color": {
+        "r": 65,
+        "g": 105,
+        "b": 225
+    },
+    "radar_width": 140,
+    "radar_height": 28
 }

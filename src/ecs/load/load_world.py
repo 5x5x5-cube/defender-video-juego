@@ -65,6 +65,10 @@ class InterfaceConfig(TypedDict):
     normal_text_color: pygame.Color
     high_score_color: pygame.Color
     high_score_max_value: int
+    hud_height: int
+    hud_line_color: pygame.Color
+    radar_width: int
+    radar_height: int
 
 
 def load_window_config(file_path: str) -> WindowConfig:
@@ -168,5 +172,13 @@ def load_interface_config(file_path: str) -> InterfaceConfig:
             data["high_score_color"]["g"],
             data["high_score_color"]["b"]
         ),
-        "high_score_max_value": data["high_score_max_value"]
+        "high_score_max_value": data["high_score_max_value"],
+        "hud_height": data["hud_height"],
+        "hud_line_color": pygame.Color(
+            data["hud_line_color"]["r"],
+            data["hud_line_color"]["g"],
+            data["hud_line_color"]["b"]
+        ),
+        "radar_width": data["radar_width"],
+        "radar_height": data["radar_height"]
     }
