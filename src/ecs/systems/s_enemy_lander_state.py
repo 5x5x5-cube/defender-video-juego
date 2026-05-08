@@ -4,7 +4,7 @@ import esper
 import pygame
 
 from src.ecs.components.c_enemy_lander_state import CEnemyLanderState, LanderState
-from src.create.prefab_creator import create_enemy_explosion
+from src.create.prefab_creator import create_humanoid_explosion
 from src.engine.service_locator import ServiceLocator
 from src.ecs.components.c_humanoid_state import CHumanoidState, HumanoidState
 from src.ecs.components.c_shoot_timer import CShootTimer
@@ -87,7 +87,7 @@ def _do_capture(world: esper.World, lander_entity: int,
         if c_lander_state.target_humanoid != -1 and world.entity_exists(c_lander_state.target_humanoid):
             humanoid_transform = world.component_for_entity(
                 c_lander_state.target_humanoid, CTransform)
-            create_enemy_explosion(world, humanoid_transform.pos.copy())
+            create_humanoid_explosion(world, humanoid_transform.pos.copy())
             world.delete_entity(c_lander_state.target_humanoid)
             ServiceLocator.sounds_service.play("assets/snd/lander_mutate_astronaut.ogg")
         c_lander_state.target_humanoid = -1

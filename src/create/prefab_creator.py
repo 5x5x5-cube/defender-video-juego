@@ -304,6 +304,12 @@ def create_enemy_explosion(world: esper.World, pos: pygame.Vector2):
                      lifetime=0.5, colors=colors, sizes=[1, 2])
 
 
+def create_humanoid_explosion(world: esper.World, pos: pygame.Vector2):
+    colors = [pygame.Color(255, 100, 255)]
+    _spawn_particles(world, pos, num_particles=10, speed=40,
+                     lifetime=0.4, colors=colors, sizes=[1, 1, 2])
+
+
 def create_input_commands(world: esper.World):
     world.create_entity(CInputCommand("MOVE_RIGHT", pygame.K_RIGHT))
     world.create_entity(CInputCommand("MOVE_LEFT", pygame.K_LEFT))
