@@ -164,7 +164,7 @@ class PlayScene(Scene):
         if self._paused:
             self._draw_pause_overlay(screen)
         if self._debug_enabled:
-            system_debug_rendering(self.ecs_world, screen)
+            system_debug_rendering(self.ecs_world, screen, self._hud_height)
             system_debug_entities(self.ecs_world, screen, self._hud_height)
 
     def _fire_bullet(self):
