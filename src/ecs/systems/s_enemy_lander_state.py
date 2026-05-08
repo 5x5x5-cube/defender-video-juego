@@ -5,6 +5,7 @@ import pygame
 
 from src.ecs.components.c_enemy_lander_state import CEnemyLanderState, LanderState
 from src.ecs.components.c_humanoid_state import CHumanoidState, HumanoidState
+from src.ecs.components.c_shoot_timer import CShootTimer
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
@@ -19,7 +20,7 @@ def system_enemy_lander_state(world: esper.World, lander_cfg: LanderConfig):
             _do_wander(world, c_transform, c_velocity,
                        c_lander_state, lander_cfg)
         elif c_lander_state.state == LanderState.HUNTING:
-            _do_hunting(world, c_transform, c_velocity,
+            _do_hunting(world, lander_entity, c_transform, c_velocity,
                         c_lander_state, lander_cfg)
         elif c_lander_state.state == LanderState.CAPTURE:
             _do_capture(world, lander_entity, c_transform, c_velocity,
@@ -41,7 +42,7 @@ def _do_wander(world: esper.World,
         c_lander_state.target_humanoid = nearest_humanoid
 
 
-def _do_hunting(world: esper.World,
+def _do_hunting(world: esper.World, lander_entity: int,
                 c_transform: CTransform, c_velocity: CVelocity,
                 c_lander_state: CEnemyLanderState, lander_cfg: LanderConfig):
     if not world.entity_exists(c_lander_state.target_humanoid):
@@ -54,7 +55,7 @@ def _do_hunting(world: esper.World,
     distance = direction.length()
 
     if distance < 5:
-        _capture_humanoid(world, c_lander_state)
+        _capture_humanoid(world, lander_entity, c_lander_state)
         return
 
     speed = lander_cfg["wander_speed"]
@@ -86,7 +87,8 @@ def _do_capture(world: esper.World, lander_entity: int,
         world.delete_entity(lander_entity)
 
 
-def _capture_humanoid(world: esper.World, c_lander_state: CEnemyLanderState):
+def _capture_humanoid(world: esper.World, lander_entity: int,
+                      c_lander_state: CEnemyLanderState):
     humanoid_state = world.component_for_entity(
         c_lander_state.target_humanoid, CHumanoidState)
     humanoid_state.state = HumanoidState.CAPTURED
@@ -95,6 +97,8 @@ def _capture_humanoid(world: esper.World, c_lander_state: CEnemyLanderState):
     humanoid_velocity.vel.x = 0
     humanoid_velocity.vel.y = 0
     c_lander_state.state = LanderState.CAPTURE
+    if world.has_component(lander_entity, CShootTimer):
+        world.component_for_entity(lander_entity, CShootTimer).disable()
 
 
 def _find_nearest_humanoid(world: esper.World,

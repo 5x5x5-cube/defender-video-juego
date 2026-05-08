@@ -46,6 +46,10 @@ class LanderConfig(TypedDict):
     direction_change_chance: float
     spawn_interval: float
     max_count: int
+    shoot_cooldown_min: float
+    shoot_cooldown_max: float
+    bullet_speed: float
+    bullet_image: str
     animations: dict
 
 

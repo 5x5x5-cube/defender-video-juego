@@ -40,7 +40,7 @@
         }
     ],
     "planet_terrain_line_points": 600,
-    "planet_parallax_factor": 1.25,
+    "planet_parallax_factor": 1,
     "world_width": 3200,
     "camera_lerp_speed": 12,
     "camera_transition_lerp_speed": 2,

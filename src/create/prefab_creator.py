@@ -16,8 +16,10 @@ from src.ecs.components.c_star_blink import CStarBlink
 from src.ecs.components.tags.c_tag_player import CTagPlayer
 from src.ecs.components.c_enemy_lander_state import CEnemyLanderState
 from src.ecs.components.c_humanoid_state import CHumanoidState
+from src.ecs.components.c_shoot_timer import CShootTimer
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
+from src.ecs.components.tags.c_tag_enemy_bullet import CTagEnemyBullet
 from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
 from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, LanderConfig, PlayerConfig
@@ -240,8 +242,29 @@ def create_enemy_lander(world: esper.World, world_x: float,
     world.add_component(lander_entity, c_surface)
     world.add_component(lander_entity, CAnimation(num_frames, anim_cfg["list"]))
     world.add_component(lander_entity, CEnemyLanderState())
+    world.add_component(lander_entity, CShootTimer(
+        lander_cfg["shoot_cooldown_min"], lander_cfg["shoot_cooldown_max"]))
     world.add_component(lander_entity, CTagEnemy())
     return lander_entity
+
+
+def create_enemy_bullet(world: esper.World, origin_pos: pygame.Vector2,
+                        target_pos: pygame.Vector2, lander_cfg: LanderConfig) -> int:
+    direction = target_pos - origin_pos
+    if direction.length() > 0:
+        direction = direction.normalize()
+    else:
+        direction = pygame.Vector2(1, 0)
+
+    speed = lander_cfg["bullet_speed"]
+    bullet_surface = ServiceLocator.images_service.get(lander_cfg["bullet_image"])
+
+    bullet_entity = world.create_entity()
+    world.add_component(bullet_entity, CTransform(origin_pos.copy()))
+    world.add_component(bullet_entity, CVelocity(direction * speed))
+    world.add_component(bullet_entity, CSurface.from_surface(bullet_surface))
+    world.add_component(bullet_entity, CTagEnemyBullet())
+    return bullet_entity
 
 
 def create_input_commands(world: esper.World):

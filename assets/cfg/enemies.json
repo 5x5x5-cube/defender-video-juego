@@ -9,6 +9,10 @@
         "direction_change_chance": 0.03,
         "spawn_interval": 3.0,
         "max_count": 5,
+        "shoot_cooldown_min": 2.0,
+        "shoot_cooldown_max": 5.0,
+        "bullet_speed": 120,
+        "bullet_image": "assets/img/enemy_bullet.png",
         "animations": {
             "number_frames": 5,
             "list": [
