@@ -14,11 +14,13 @@ from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.c_star_blink import CStarBlink
 from src.ecs.components.tags.c_tag_player import CTagPlayer
+from src.ecs.components.c_enemy_lander_state import CEnemyLanderState
 from src.ecs.components.c_humanoid_state import CHumanoidState
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
+from src.ecs.components.tags.c_tag_enemy import CTagEnemy
 from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
-from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, PlayerConfig
+from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, LanderConfig, PlayerConfig
 from src.ecs.components.c_player_state import FacingDirection
 from src.engine.service_locator import ServiceLocator
 
@@ -185,28 +187,25 @@ def _create_laser_surface(width: int, height: int,
 
 
 def create_humanoid(world: esper.World, world_x: float,
-                    screen_height: int, c_terrain: CTerrain,
-                    parallax_factor: float) -> int:
-    parallax_x = world_x * parallax_factor
+                    screen_height: int, c_terrain: CTerrain) -> int:
     humanoid_surface = ServiceLocator.images_service.get("assets/img/astronaut.png")
     num_frames = 3
     frame_width = humanoid_surface.get_width() // num_frames
     humanoid_height = humanoid_surface.get_height()
-    terrain_y = c_terrain.surface_height_at(parallax_x)
+    terrain_y = c_terrain.surface_height_at(world_x)
     min_y = terrain_y
     max_y = screen_height - humanoid_height
     pos_y = random.uniform(min_y, max_y) if max_y > min_y else min_y
 
     humanoid_entity = world.create_entity()
-    world.add_component(humanoid_entity, CTransform(pygame.Vector2(parallax_x, pos_y)))
+    world.add_component(humanoid_entity, CTransform(pygame.Vector2(world_x, pos_y)))
     world.add_component(humanoid_entity, CVelocity(pygame.Vector2(0, 0)))
     c_surface = CSurface.from_surface(humanoid_surface)
     c_surface.area = pygame.Rect(0, 0, frame_width, humanoid_height)
     world.add_component(humanoid_entity, c_surface)
     world.add_component(humanoid_entity, CAnimation(num_frames,
         [{"name": "walk", "start": 0, "end": 2, "framerate": 4}]))
-    world.add_component(humanoid_entity, CHumanoidState(parallax_x))
-    world.add_component(humanoid_entity, CParallax(parallax_factor))
+    world.add_component(humanoid_entity, CHumanoidState(world_x))
     world.add_component(humanoid_entity, CTagHumanoid())
     return humanoid_entity
 
@@ -214,17 +213,35 @@ def create_humanoid(world: esper.World, world_x: float,
 def create_humanoids(world: esper.World, world_width: float,
                      screen_height: int, count: int):
     c_terrain = None
-    parallax_factor = 1.0
-    for _, (terrain, parallax) in world.get_components(CTerrain, CParallax):
+    for _, terrain in world.get_component(CTerrain):
         c_terrain = terrain
-        parallax_factor = parallax.factor
         break
     if c_terrain is None:
         return
 
     for _ in range(count):
         world_x = random.uniform(0, world_width)
-        create_humanoid(world, world_x, screen_height, c_terrain, parallax_factor)
+        create_humanoid(world, world_x, screen_height, c_terrain)
+
+
+def create_enemy_lander(world: esper.World, world_x: float,
+                        lander_cfg: LanderConfig) -> int:
+    lander_surface = ServiceLocator.images_service.get(lander_cfg["image"])
+    anim_cfg = lander_cfg["animations"]
+    num_frames = anim_cfg["number_frames"]
+    frame_width = lander_surface.get_width() // num_frames
+    lander_height = lander_surface.get_height()
+
+    lander_entity = world.create_entity()
+    world.add_component(lander_entity, CTransform(pygame.Vector2(world_x, -lander_height)))
+    world.add_component(lander_entity, CVelocity(pygame.Vector2(0, 0)))
+    c_surface = CSurface.from_surface(lander_surface)
+    c_surface.area = pygame.Rect(0, 0, frame_width, lander_height)
+    world.add_component(lander_entity, c_surface)
+    world.add_component(lander_entity, CAnimation(num_frames, anim_cfg["list"]))
+    world.add_component(lander_entity, CEnemyLanderState())
+    world.add_component(lander_entity, CTagEnemy())
+    return lander_entity
 
 
 def create_input_commands(world: esper.World):

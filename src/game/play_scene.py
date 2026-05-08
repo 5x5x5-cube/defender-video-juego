@@ -2,8 +2,8 @@ import pygame
 
 from src.engine.scenes.scene import Scene
 from src.ecs.load.load_world import (load_world_config, load_player_config,
-    load_bullet_config, load_humanoid_config, load_window_config,
-    load_interface_config)
+    load_bullet_config, load_humanoid_config, load_enemies_config,
+    load_window_config, load_interface_config)
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_player_state import CPlayerState, FacingDirection, VerticalDirection
 from src.ecs.components.c_transform import CTransform
@@ -26,7 +26,11 @@ from src.ecs.systems.s_animation import system_animation
 from src.ecs.systems.s_camera import system_camera
 from src.ecs.systems.s_screen_bullet import system_screen_bullet
 from src.ecs.systems.s_humanoid_state import system_humanoid_state
+from src.ecs.systems.s_enemy_lander_state import system_enemy_lander_state
+from src.ecs.systems.s_enemy_spawner import system_enemy_spawner
+from src.ecs.systems.s_screen_enemy import system_screen_enemy
 from src.ecs.systems.s_debug_rendering import system_debug_rendering
+from src.ecs.systems.s_debug_entities import system_debug_entities
 from src.engine.service_locator import ServiceLocator
 
 
@@ -38,6 +42,7 @@ class PlayScene(Scene):
         self._player_cfg = load_player_config("assets/cfg/player.json")
         self._bullet_cfg = load_bullet_config("assets/cfg/bullet.json")
         self._humanoid_cfg = load_humanoid_config("assets/cfg/humanoid.json")
+        self._enemies_cfg = load_enemies_config("assets/cfg/enemies.json")
         self._interface_cfg = load_interface_config("assets/cfg/interface.json")
 
         world_width = self._world_cfg["world_width"]
@@ -80,6 +85,8 @@ class PlayScene(Scene):
         self._held_horizontal: set[FacingDirection] = set()
         self._debug_enabled = False
         self._paused = False
+        self._game_time = 0.0
+        self._last_lander_spawn = 0.0
 
     def do_process_events(self, event: pygame.event):
         if event.type == pygame.KEYDOWN:
@@ -118,12 +125,18 @@ class PlayScene(Scene):
     def do_update(self, delta_time: float):
         if self._paused:
             return
+        self._game_time += delta_time
         system_player_state(self.ecs_world, delta_time, self._player_cfg)
         system_movement(self.ecs_world, delta_time)
         system_screen_player(self.ecs_world, self._game_rect,
                              self._world_cfg["world_width"])
         system_screen_bullet(self.ecs_world)
         system_humanoid_state(self.ecs_world, self._humanoid_cfg)
+        self._last_lander_spawn = system_enemy_spawner(
+            self.ecs_world, self._game_time, self._last_lander_spawn,
+            self._world_cfg["world_width"], self._enemies_cfg["lander"])
+        system_enemy_lander_state(self.ecs_world, self._enemies_cfg["lander"])
+        system_screen_enemy(self.ecs_world, self._game_rect)
         system_camera(self.ecs_world, delta_time,
                       self._world_cfg["camera_lerp_speed"],
                       self._world_cfg["camera_transition_lerp_speed"],
@@ -144,6 +157,7 @@ class PlayScene(Scene):
             self._draw_pause_overlay(screen)
         if self._debug_enabled:
             system_debug_rendering(self.ecs_world, screen)
+            system_debug_entities(self.ecs_world, screen, self._hud_height)
 
     def _fire_bullet(self):
         bullet_count = len(self.ecs_world.get_component(CTagBullet))

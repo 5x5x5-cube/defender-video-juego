@@ -1,0 +1,19 @@
+{
+    "lander": {
+        "image": "assets/img/enemy_lander.png",
+        "wander_speed": 30,
+        "ascend_speed": 40,
+        "humanoid_bias_min": 0.1,
+        "humanoid_bias_max": 0.8,
+        "bias_range": 150,
+        "direction_change_chance": 0.03,
+        "spawn_interval": 3.0,
+        "max_count": 5,
+        "animations": {
+            "number_frames": 5,
+            "list": [
+                { "name": "fly", "start": 0, "end": 4, "framerate": 8 }
+            ]
+        }
+    }
+}

@@ -36,6 +36,23 @@ class HumanoidConfig(TypedDict):
     direction_change_chance: float
 
 
+class LanderConfig(TypedDict):
+    image: str
+    wander_speed: float
+    ascend_speed: float
+    humanoid_bias_min: float
+    humanoid_bias_max: float
+    bias_range: float
+    direction_change_chance: float
+    spawn_interval: float
+    max_count: int
+    animations: dict
+
+
+class EnemiesConfig(TypedDict):
+    lander: LanderConfig
+
+
 class BulletConfig(TypedDict):
     speed: float
     max_count: int
@@ -106,6 +123,15 @@ def load_world_config(file_path: str) -> WorldConfig:
         "camera_lerp_speed": data["camera_lerp_speed"],
         "camera_transition_lerp_speed": data["camera_transition_lerp_speed"],
         "camera_transition_delay": data["camera_transition_delay"]
+    }
+
+
+def load_enemies_config(file_path: str) -> EnemiesConfig:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    return {
+        "lander": data["lander"]
     }
 
 
