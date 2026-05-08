@@ -52,3 +52,4 @@ def _rescue_humanoid_if_captured(world: esper.World, enemy_entity: int):
     humanoid_state = world.component_for_entity(
         c_lander_state.target_humanoid, CHumanoidState)
     humanoid_state.state = HumanoidState.ON_GROUND
+    ServiceLocator.sounds_service.play("assets/snd/astronaut_fall.ogg")
