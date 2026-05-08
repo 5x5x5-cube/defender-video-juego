@@ -8,6 +8,7 @@ class HumanoidState(Enum):
 
 
 class CHumanoidState:
-    def __init__(self, spawn_x: float) -> None:
+    def __init__(self, spawn_x: float, spawn_y: float) -> None:
         self.state = HumanoidState.ON_GROUND
         self.spawn_x = spawn_x
+        self.spawn_y = spawn_y

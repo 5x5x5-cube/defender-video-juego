@@ -208,7 +208,7 @@ def create_humanoid(world: esper.World, world_x: float,
     world.add_component(humanoid_entity, c_surface)
     world.add_component(humanoid_entity, CAnimation(num_frames,
         [{"name": "walk", "start": 0, "end": 2, "framerate": 4}]))
-    world.add_component(humanoid_entity, CHumanoidState(world_x))
+    world.add_component(humanoid_entity, CHumanoidState(world_x, pos_y))
     world.add_component(humanoid_entity, CTagHumanoid())
     return humanoid_entity
 
