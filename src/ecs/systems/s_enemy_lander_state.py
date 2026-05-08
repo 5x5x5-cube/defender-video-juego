@@ -4,6 +4,7 @@ import esper
 import pygame
 
 from src.ecs.components.c_enemy_lander_state import CEnemyLanderState, LanderState
+from src.engine.service_locator import ServiceLocator
 from src.ecs.components.c_humanoid_state import CHumanoidState, HumanoidState
 from src.ecs.components.c_shoot_timer import CShootTimer
 from src.ecs.components.c_transform import CTransform
@@ -84,6 +85,7 @@ def _do_capture(world: esper.World, lander_entity: int,
     if c_transform.pos.y < -20:
         if c_lander_state.target_humanoid != -1 and world.entity_exists(c_lander_state.target_humanoid):
             world.delete_entity(c_lander_state.target_humanoid)
+            ServiceLocator.sounds_service.play("assets/snd/lander_mutate_astronaut.ogg")
         world.delete_entity(lander_entity)
 
 
@@ -99,6 +101,7 @@ def _capture_humanoid(world: esper.World, lander_entity: int,
     c_lander_state.state = LanderState.CAPTURE
     if world.has_component(lander_entity, CShootTimer):
         world.component_for_entity(lander_entity, CShootTimer).disable()
+    ServiceLocator.sounds_service.play("assets/snd/lander_capture_astronaut.ogg")
 
 
 def _find_nearest_humanoid(world: esper.World,
