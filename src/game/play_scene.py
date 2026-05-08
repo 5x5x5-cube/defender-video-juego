@@ -30,6 +30,9 @@ from src.ecs.systems.s_enemy_lander_state import system_enemy_lander_state
 from src.ecs.systems.s_enemy_spawner import system_enemy_spawner
 from src.ecs.systems.s_enemy_shooting import system_enemy_shooting
 from src.ecs.systems.s_screen_enemy import system_screen_enemy
+from src.ecs.systems.s_collision_player import system_collision_player
+from src.ecs.systems.s_collision_bullet_enemy import system_collision_bullet_enemy
+from src.ecs.systems.s_particle_cleanup import system_particle_cleanup
 from src.ecs.systems.s_debug_rendering import system_debug_rendering
 from src.ecs.systems.s_debug_entities import system_debug_entities
 from src.engine.service_locator import ServiceLocator
@@ -139,6 +142,9 @@ class PlayScene(Scene):
         system_enemy_lander_state(self.ecs_world, self._enemies_cfg["lander"])
         system_enemy_shooting(self.ecs_world, delta_time, self._enemies_cfg["lander"])
         system_screen_enemy(self.ecs_world, self._game_rect)
+        system_collision_bullet_enemy(self.ecs_world)
+        system_collision_player(self.ecs_world)
+        system_particle_cleanup(self.ecs_world, delta_time)
         system_camera(self.ecs_world, delta_time,
                       self._world_cfg["camera_lerp_speed"],
                       self._world_cfg["camera_transition_lerp_speed"],

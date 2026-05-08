@@ -15,6 +15,7 @@ from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.c_star_blink import CStarBlink
 from src.ecs.components.tags.c_tag_player import CTagPlayer
 from src.ecs.components.c_enemy_lander_state import CEnemyLanderState
+from src.ecs.components.c_particle_lifetime import CParticleLifetime
 from src.ecs.components.c_humanoid_state import CHumanoidState
 from src.ecs.components.c_shoot_timer import CShootTimer
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
@@ -265,6 +266,42 @@ def create_enemy_bullet(world: esper.World, origin_pos: pygame.Vector2,
     world.add_component(bullet_entity, CSurface.from_surface(bullet_surface))
     world.add_component(bullet_entity, CTagEnemyBullet())
     return bullet_entity
+
+
+def _spawn_particles(world: esper.World, pos: pygame.Vector2,
+                     num_particles: int, speed: float, lifetime: float,
+                     colors: list[pygame.Color], sizes: list[int]):
+    for _ in range(num_particles):
+        angle = random.uniform(0, 360)
+        particle_speed = random.uniform(speed * 0.3, speed)
+        vel = pygame.Vector2(particle_speed, 0).rotate(angle)
+        particle_lifetime = random.uniform(lifetime * 0.3, lifetime)
+        color = random.choice(colors)
+        size = random.choice(sizes)
+
+        particle = world.create_entity()
+        world.add_component(particle, CTransform(pos.copy()))
+        world.add_component(particle, CVelocity(vel))
+        world.add_component(particle, CSurface(
+            pygame.Vector2(size, size), color))
+        world.add_component(particle, CParticleLifetime(particle_lifetime))
+
+
+def create_ship_explosion(world: esper.World, pos: pygame.Vector2):
+    colors = [
+        pygame.Color(255, 255, 255),
+        pygame.Color(255, 255, 200),
+        pygame.Color(255, 200, 100),
+        pygame.Color(200, 150, 50),
+    ]
+    _spawn_particles(world, pos, num_particles=50, speed=100,
+                     lifetime=1.0, colors=colors, sizes=[1, 2, 2, 3])
+
+
+def create_enemy_explosion(world: esper.World, pos: pygame.Vector2):
+    colors = [pygame.Color(0, 255, 0)]
+    _spawn_particles(world, pos, num_particles=15, speed=60,
+                     lifetime=0.5, colors=colors, sizes=[1, 2])
 
 
 def create_input_commands(world: esper.World):
