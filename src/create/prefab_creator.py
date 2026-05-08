@@ -14,11 +14,16 @@ from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.c_star_blink import CStarBlink
 from src.ecs.components.tags.c_tag_player import CTagPlayer
+from src.ecs.components.c_enemy_lander_state import CEnemyLanderState
+from src.ecs.components.c_particle_lifetime import CParticleLifetime
 from src.ecs.components.c_humanoid_state import CHumanoidState
+from src.ecs.components.c_shoot_timer import CShootTimer
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
+from src.ecs.components.tags.c_tag_enemy import CTagEnemy
+from src.ecs.components.tags.c_tag_enemy_bullet import CTagEnemyBullet
 from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
-from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, PlayerConfig
+from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, LanderConfig, PlayerConfig
 from src.ecs.components.c_player_state import FacingDirection
 from src.engine.service_locator import ServiceLocator
 
@@ -185,28 +190,25 @@ def _create_laser_surface(width: int, height: int,
 
 
 def create_humanoid(world: esper.World, world_x: float,
-                    screen_height: int, c_terrain: CTerrain,
-                    parallax_factor: float) -> int:
-    parallax_x = world_x * parallax_factor
+                    screen_height: int, c_terrain: CTerrain) -> int:
     humanoid_surface = ServiceLocator.images_service.get("assets/img/astronaut.png")
     num_frames = 3
     frame_width = humanoid_surface.get_width() // num_frames
     humanoid_height = humanoid_surface.get_height()
-    terrain_y = c_terrain.surface_height_at(parallax_x)
+    terrain_y = c_terrain.surface_height_at(world_x)
     min_y = terrain_y
     max_y = screen_height - humanoid_height
     pos_y = random.uniform(min_y, max_y) if max_y > min_y else min_y
 
     humanoid_entity = world.create_entity()
-    world.add_component(humanoid_entity, CTransform(pygame.Vector2(parallax_x, pos_y)))
+    world.add_component(humanoid_entity, CTransform(pygame.Vector2(world_x, pos_y)))
     world.add_component(humanoid_entity, CVelocity(pygame.Vector2(0, 0)))
     c_surface = CSurface.from_surface(humanoid_surface)
     c_surface.area = pygame.Rect(0, 0, frame_width, humanoid_height)
     world.add_component(humanoid_entity, c_surface)
     world.add_component(humanoid_entity, CAnimation(num_frames,
         [{"name": "walk", "start": 0, "end": 2, "framerate": 4}]))
-    world.add_component(humanoid_entity, CHumanoidState(parallax_x))
-    world.add_component(humanoid_entity, CParallax(parallax_factor))
+    world.add_component(humanoid_entity, CHumanoidState(world_x, pos_y))
     world.add_component(humanoid_entity, CTagHumanoid())
     return humanoid_entity
 
@@ -214,17 +216,98 @@ def create_humanoid(world: esper.World, world_x: float,
 def create_humanoids(world: esper.World, world_width: float,
                      screen_height: int, count: int):
     c_terrain = None
-    parallax_factor = 1.0
-    for _, (terrain, parallax) in world.get_components(CTerrain, CParallax):
+    for _, terrain in world.get_component(CTerrain):
         c_terrain = terrain
-        parallax_factor = parallax.factor
         break
     if c_terrain is None:
         return
 
     for _ in range(count):
         world_x = random.uniform(0, world_width)
-        create_humanoid(world, world_x, screen_height, c_terrain, parallax_factor)
+        create_humanoid(world, world_x, screen_height, c_terrain)
+
+
+def create_enemy_lander(world: esper.World, world_x: float,
+                        lander_cfg: LanderConfig) -> int:
+    lander_surface = ServiceLocator.images_service.get(lander_cfg["image"])
+    anim_cfg = lander_cfg["animations"]
+    num_frames = anim_cfg["number_frames"]
+    frame_width = lander_surface.get_width() // num_frames
+    lander_height = lander_surface.get_height()
+
+    lander_entity = world.create_entity()
+    world.add_component(lander_entity, CTransform(pygame.Vector2(world_x, -lander_height)))
+    world.add_component(lander_entity, CVelocity(pygame.Vector2(0, 0)))
+    c_surface = CSurface.from_surface(lander_surface)
+    c_surface.area = pygame.Rect(0, 0, frame_width, lander_height)
+    world.add_component(lander_entity, c_surface)
+    world.add_component(lander_entity, CAnimation(num_frames, anim_cfg["list"]))
+    world.add_component(lander_entity, CEnemyLanderState())
+    world.add_component(lander_entity, CShootTimer(
+        lander_cfg["shoot_cooldown_min"], lander_cfg["shoot_cooldown_max"]))
+    world.add_component(lander_entity, CTagEnemy())
+    return lander_entity
+
+
+def create_enemy_bullet(world: esper.World, origin_pos: pygame.Vector2,
+                        target_pos: pygame.Vector2, lander_cfg: LanderConfig) -> int:
+    direction = target_pos - origin_pos
+    if direction.length() > 0:
+        direction = direction.normalize()
+    else:
+        direction = pygame.Vector2(1, 0)
+
+    speed = lander_cfg["bullet_speed"]
+    bullet_surface = ServiceLocator.images_service.get(lander_cfg["bullet_image"])
+
+    bullet_entity = world.create_entity()
+    world.add_component(bullet_entity, CTransform(origin_pos.copy()))
+    world.add_component(bullet_entity, CVelocity(direction * speed))
+    world.add_component(bullet_entity, CSurface.from_surface(bullet_surface))
+    world.add_component(bullet_entity, CTagEnemyBullet())
+    return bullet_entity
+
+
+def _spawn_particles(world: esper.World, pos: pygame.Vector2,
+                     num_particles: int, speed: float, lifetime: float,
+                     colors: list[pygame.Color], sizes: list[int]):
+    for _ in range(num_particles):
+        angle = random.uniform(0, 360)
+        particle_speed = random.uniform(speed * 0.3, speed)
+        vel = pygame.Vector2(particle_speed, 0).rotate(angle)
+        particle_lifetime = random.uniform(lifetime * 0.3, lifetime)
+        color = random.choice(colors)
+        size = random.choice(sizes)
+
+        particle = world.create_entity()
+        world.add_component(particle, CTransform(pos.copy()))
+        world.add_component(particle, CVelocity(vel))
+        world.add_component(particle, CSurface(
+            pygame.Vector2(size, size), color))
+        world.add_component(particle, CParticleLifetime(particle_lifetime))
+
+
+def create_ship_explosion(world: esper.World, pos: pygame.Vector2):
+    colors = [
+        pygame.Color(255, 255, 255),
+        pygame.Color(255, 255, 200),
+        pygame.Color(255, 200, 100),
+        pygame.Color(200, 150, 50),
+    ]
+    _spawn_particles(world, pos, num_particles=50, speed=100,
+                     lifetime=1.0, colors=colors, sizes=[1, 2, 2, 3])
+
+
+def create_enemy_explosion(world: esper.World, pos: pygame.Vector2):
+    colors = [pygame.Color(0, 255, 0)]
+    _spawn_particles(world, pos, num_particles=15, speed=60,
+                     lifetime=0.5, colors=colors, sizes=[1, 2])
+
+
+def create_humanoid_explosion(world: esper.World, pos: pygame.Vector2):
+    colors = [pygame.Color(255, 100, 255)]
+    _spawn_particles(world, pos, num_particles=10, speed=40,
+                     lifetime=0.4, colors=colors, sizes=[1, 1, 2])
 
 
 def create_input_commands(world: esper.World):

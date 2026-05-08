@@ -3,6 +3,7 @@ import esper
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_viewport import CViewport
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
+from src.ecs.components.tags.c_tag_enemy_bullet import CTagEnemyBullet
 
 
 def system_screen_bullet(world: esper.World):
@@ -11,8 +12,11 @@ def system_screen_bullet(world: esper.World):
         return
 
     for bullet_entity, (c_transform, _) in world.get_components(CTransform, CTagBullet):
-        screen_x = c_viewport.world_to_screen_x(c_transform.pos.x)
-        if _touches_viewport_edge(screen_x, c_viewport.screen_width):
+        if _is_outside_viewport(c_transform, c_viewport):
+            world.delete_entity(bullet_entity)
+
+    for bullet_entity, (c_transform, _) in world.get_components(CTransform, CTagEnemyBullet):
+        if _is_outside_viewport(c_transform, c_viewport):
             world.delete_entity(bullet_entity)
 
 
@@ -22,5 +26,6 @@ def _get_viewport(world: esper.World):
     return None
 
 
-def _touches_viewport_edge(screen_x: float, screen_width: float) -> bool:
-    return screen_x <= 0 or screen_x >= screen_width
+def _is_outside_viewport(c_transform: CTransform, c_viewport: CViewport) -> bool:
+    screen_x = c_viewport.world_to_screen_x(c_transform.pos.x)
+    return screen_x <= 0 or screen_x >= c_viewport.screen_width
