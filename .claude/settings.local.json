@@ -1,11 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c \"from PIL import Image; img = Image.open\\('c:/Users/ronal/Documents/desarollojuegos/defender-video-juego/assets/img/enemy_mutant.png'\\); print\\(img.size\\)\")",
-      "Bash(python -c \"import pygame; pygame.init\\(\\); s=pygame.image.load\\('c:/Users/ronal/Documents/desarollojuegos/defender-video-juego/assets/img/enemy_mutant.png'\\); print\\(s.get_size\\(\\)\\)\")",
-      "Bash(python -c \"import src.engine.game_engine; print\\('OK'\\)\")",
-      "Bash(python -c \"from src.ecs.systems.s_enemy_lander_state import system_enemy_lander_state; print\\('OK'\\)\")",
-      "Bash(python -c ' *)"
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\fabri\\\\OneDrive\\\\Escritorio\\\\defender-video-juego\" -Recurse -Force)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "PowerShell(cd \"C:\\\\Users\\\\fabri\\\\OneDrive\\\\Escritorio\\\\defender-video-juego\"; Get-ChildItem -Recurse -Force | Where-Object {-not $_.PSIsContainer} | Select-Object FullName | ForEach-Object {$_.FullName -replace [regex]::Escape\\(\"C:\\\\Users\\\\fabri\\\\OneDrive\\\\Escritorio\\\\defender-video-juego\"\\), \".\"} | Sort-Object)"
     ]
   }
 }

@@ -349,3 +349,4 @@ def create_input_commands(world: esper.World):
     world.create_entity(CInputCommand("MOVE_UP", pygame.K_UP))
     world.create_entity(CInputCommand("MOVE_DOWN", pygame.K_DOWN))
     world.create_entity(CInputCommand("FIRE", pygame.K_s))
+    world.create_entity(CInputCommand("SMART_BOMB", pygame.K_SPACE))

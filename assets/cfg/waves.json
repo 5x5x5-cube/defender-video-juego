@@ -1,0 +1,49 @@
+{
+    "waves": [
+        {
+            "kill_quota": 10,
+            "humanoid_count": 10,
+            "lander_max_count": 3,
+            "lander_spawn_interval": 5.0,
+            "lander_wander_speed": 20,
+            "lander_ascend_speed": 25,
+            "mutant_speed": 65
+        },
+        {
+            "kill_quota": 15,
+            "humanoid_count": 10,
+            "lander_max_count": 4,
+            "lander_spawn_interval": 4.0,
+            "lander_wander_speed": 28,
+            "lander_ascend_speed": 35,
+            "mutant_speed": 82
+        },
+        {
+            "kill_quota": 20,
+            "humanoid_count": 9,
+            "lander_max_count": 5,
+            "lander_spawn_interval": 3.5,
+            "lander_wander_speed": 36,
+            "lander_ascend_speed": 44,
+            "mutant_speed": 100
+        },
+        {
+            "kill_quota": 25,
+            "humanoid_count": 8,
+            "lander_max_count": 6,
+            "lander_spawn_interval": 3.0,
+            "lander_wander_speed": 44,
+            "lander_ascend_speed": 52,
+            "mutant_speed": 118
+        },
+        {
+            "kill_quota": 30,
+            "humanoid_count": 7,
+            "lander_max_count": 7,
+            "lander_spawn_interval": 2.5,
+            "lander_wander_speed": 52,
+            "lander_ascend_speed": 60,
+            "mutant_speed": 135
+        }
+    ]
+}

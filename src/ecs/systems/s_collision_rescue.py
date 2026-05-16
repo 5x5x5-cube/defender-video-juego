@@ -8,7 +8,8 @@ from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
 from src.ecs.components.tags.c_tag_player import CTagPlayer
 import src.engine.game_state as game_state
 
-RESCUE_SCORE = 500
+CATCH_SCORE = 250
+DEPOSIT_SCORE = 250
 
 
 def system_collision_rescue(world: esper.World):
@@ -16,24 +17,30 @@ def system_collision_rescue(world: esper.World):
     if player_data is None:
         return
 
-    player_rect = player_data
+    player_pos, player_rect = player_data
 
     for humanoid_entity, (c_transform, c_velocity, c_surface, c_humanoid_state, _) in world.get_components(
             CTransform, CVelocity, CSurface, CHumanoidState, CTagHumanoid):
-        if c_humanoid_state.state != HumanoidState.FALLING:
-            continue
+        if c_humanoid_state.state == HumanoidState.FALLING:
+            humanoid_rect = c_surface.get_area_relative(c_transform.pos)
+            if player_rect.colliderect(humanoid_rect):
+                c_velocity.vel.x = 0
+                c_velocity.vel.y = 0
+                c_humanoid_state.state = HumanoidState.CARRIED
+                game_state.score += CATCH_SCORE
 
-        humanoid_rect = c_surface.get_area_relative(c_transform.pos)
-        if player_rect.colliderect(humanoid_rect):
-            c_velocity.vel.y = 0
-            c_transform.pos.y = c_humanoid_state.spawn_y
-            c_humanoid_state.spawn_x = c_transform.pos.x
-            c_humanoid_state.state = HumanoidState.ON_GROUND
-            game_state.score += RESCUE_SCORE
+        elif c_humanoid_state.state == HumanoidState.CARRIED:
+            c_transform.pos.x = player_pos.x
+            c_transform.pos.y = player_pos.y + 10
+            if c_transform.pos.y >= c_humanoid_state.spawn_y:
+                c_transform.pos.y = c_humanoid_state.spawn_y
+                c_humanoid_state.spawn_x = c_transform.pos.x
+                c_humanoid_state.state = HumanoidState.ON_GROUND
+                game_state.score += DEPOSIT_SCORE
 
 
 def _get_player_data(world: esper.World):
     for _, (c_transform, c_surface, _) in world.get_components(
             CTransform, CSurface, CTagPlayer):
-        return c_surface.get_area_relative(c_transform.pos)
+        return c_transform.pos, c_surface.get_area_relative(c_transform.pos)
     return None
