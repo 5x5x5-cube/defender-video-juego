@@ -3,13 +3,16 @@ import pygame
 from src.engine.scenes.scene import Scene
 from src.ecs.load.load_world import (load_world_config, load_player_config,
     load_bullet_config, load_humanoid_config, load_enemies_config,
-    load_window_config, load_interface_config)
+    load_window_config, load_interface_config, load_waves_config)
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_player_state import CPlayerState, FacingDirection, VerticalDirection
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
+from src.ecs.components.tags.c_tag_enemy import CTagEnemy
+from src.ecs.components.tags.c_tag_enemy_bullet import CTagEnemyBullet
 from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
+from src.ecs.components.tags.c_tag_mutant import CTagMutant
 from src.ecs.components.tags.c_tag_player import CTagPlayer
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
 from src.create.prefab_creator import (create_star, create_player,
@@ -38,6 +41,7 @@ from src.ecs.systems.s_collision_bullet_enemy import system_collision_bullet_ene
 from src.ecs.systems.s_collision_bullet_humanoid import system_collision_bullet_humanoid
 from src.ecs.systems.s_collision_rescue import system_collision_rescue
 from src.ecs.systems.s_particle_cleanup import system_particle_cleanup
+from src.ecs.systems.s_smart_bomb import system_smart_bomb
 from src.ecs.systems.s_debug_rendering import system_debug_rendering
 from src.ecs.systems.s_debug_entities import system_debug_entities
 from src.engine.service_locator import ServiceLocator
@@ -45,6 +49,9 @@ import src.engine.game_state as game_state
 
 _PAUSED_BLINK_RATE = 0.4
 _RESPAWN_DELAY = 1.5
+_FANFARE_DURATION = 2.5
+_PAUSED_HIDDEN_TAGS = (CTagPlayer, CTagPlayerBurner, CTagBullet,
+                       CTagEnemy, CTagMutant, CTagEnemyBullet)
 
 
 class PlayScene(Scene):
@@ -57,6 +64,9 @@ class PlayScene(Scene):
         self._humanoid_cfg = load_humanoid_config("assets/cfg/humanoid.json")
         self._enemies_cfg = load_enemies_config("assets/cfg/enemies.json")
         self._interface_cfg = load_interface_config("assets/cfg/interface.json")
+        self._waves_cfg = load_waves_config("assets/cfg/waves.json")
+
+        self._apply_wave_config()
 
         world_width = self._world_cfg["world_width"]
         hud_height = self._interface_cfg["hud_height"]
@@ -88,7 +98,7 @@ class PlayScene(Scene):
         )
 
         create_humanoids(self.ecs_world, world_width,
-                         game_height, self._humanoid_cfg["count"])
+                         game_height, self._wave_humanoid_count)
 
         create_player(self.ecs_world, self._player_cfg)
         create_player_burner(self.ecs_world, self._player_cfg,
@@ -104,8 +114,10 @@ class PlayScene(Scene):
         self._game_time = 0.0
         self._last_lander_spawn = 0.0
         self._respawn_timer: float = -1.0
+        self._fanfare_timer: float = _FANFARE_DURATION
 
         game_state.reset_flags()
+        game_state.level_kills = 0
         ServiceLocator.sounds_service.play("assets/snd/game_start.ogg")
 
     def do_process_events(self, event: pygame.event):
@@ -138,8 +150,17 @@ class PlayScene(Scene):
         elif c_input.name == "FIRE":
             if c_input.phase == CommandPhase.START:
                 self._fire_bullet()
+        elif c_input.name == "SMART_BOMB":
+            if c_input.phase == CommandPhase.START:
+                system_smart_bomb(self.ecs_world, self._game_rect.width)
 
     def do_update(self, delta_time: float):
+        if self._fanfare_timer > 0:
+            self._fanfare_timer -= delta_time
+            system_animation(self.ecs_world, delta_time)
+            system_star_blink(self.ecs_world, delta_time)
+            return
+
         if self._paused:
             self._update_paused_blink(delta_time)
             return
@@ -186,7 +207,22 @@ class PlayScene(Scene):
 
         self._handle_game_events()
 
+    def _apply_wave_config(self):
+        waves = self._waves_cfg["waves"]
+        idx = min(game_state.current_wave, len(waves) - 1)
+        wave = waves[idx]
+        self._enemies_cfg["level_kill_quota"] = wave["kill_quota"]
+        self._enemies_cfg["lander"]["max_count"] = wave["lander_max_count"]
+        self._enemies_cfg["lander"]["spawn_interval"] = wave["lander_spawn_interval"]
+        self._enemies_cfg["lander"]["wander_speed"] = wave["lander_wander_speed"]
+        self._enemies_cfg["lander"]["ascend_speed"] = wave["lander_ascend_speed"]
+        self._enemies_cfg["mutant"]["speed"] = wave["mutant_speed"]
+        self._wave_humanoid_count = wave["humanoid_count"]
+        self._total_waves = len(waves)
+
     def _handle_game_events(self):
+        game_state.check_bonus_milestone()
+
         if game_state.player_hit:
             game_state.player_hit = False
             game_state.lives -= 1
@@ -207,8 +243,12 @@ class PlayScene(Scene):
             return
 
         if game_state.level_kills >= self._enemies_cfg["level_kill_quota"]:
-            game_state.level_complete = False
-            self.switch_scene("WIN_SCENE")
+            game_state.current_wave += 1
+            if game_state.current_wave >= self._total_waves:
+                game_state.current_wave = self._total_waves - 1
+                self.switch_scene("WIN_SCENE")
+            else:
+                self.switch_scene("WAVE_COMPLETE_SCENE")
 
     def _do_respawn(self):
         # Delete old burner if still exists
@@ -221,12 +261,17 @@ class PlayScene(Scene):
 
     def do_draw(self, screen):
         self._game_surface.fill(self._window_cfg["bg_color"])
-        system_rendering(self.ecs_world, self._game_surface)
+        hidden = _PAUSED_HIDDEN_TAGS if self._paused else ()
+        system_rendering(self.ecs_world, self._game_surface, hidden)
         screen.blit(self._game_surface, (0, self._hud_height))
 
-        system_rendering_hud(screen, self._interface_cfg, self.ecs_world)
+        system_rendering_hud(screen, self._interface_cfg, self.ecs_world,
+                             self._game_rect.height,
+                             self._world_cfg["world_width"])
 
-        if self._paused and self._paused_show_text:
+        if self._fanfare_timer > 0:
+            self._draw_fanfare_overlay(screen)
+        elif self._paused and self._paused_show_text:
             self._draw_pause_overlay(screen)
         if self._debug_enabled:
             system_debug_rendering(self.ecs_world, screen, self._hud_height)
@@ -281,6 +326,13 @@ class PlayScene(Scene):
         if self._paused_blink_timer >= _PAUSED_BLINK_RATE:
             self._paused_blink_timer = 0.0
             self._paused_show_text = not self._paused_show_text
+
+    def _draw_fanfare_overlay(self, screen):
+        font = ServiceLocator.fonts_service.get("assets/fnt/PressStart2P.ttf", 8)
+        text = font.render("GET READY!", False, pygame.Color(255, 255, 0))
+        text_rect = text.get_rect(center=(self.screen_rect.centerx,
+                                          self.screen_rect.centery))
+        screen.blit(text, text_rect)
 
     def _draw_pause_overlay(self, screen):
         font = ServiceLocator.fonts_service.get("assets/fnt/PressStart2P.ttf", 16)

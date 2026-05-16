@@ -93,6 +93,20 @@ class PlayerConfig(TypedDict):
     animations: dict
 
 
+class WaveConfig(TypedDict):
+    kill_quota: int
+    humanoid_count: int
+    lander_max_count: int
+    lander_spawn_interval: float
+    lander_wander_speed: float
+    lander_ascend_speed: float
+    mutant_speed: float
+
+
+class WavesConfig(TypedDict):
+    waves: list[WaveConfig]
+
+
 class InterfaceConfig(TypedDict):
     title_text_color: pygame.Color
     normal_text_color: pygame.Color
@@ -194,6 +208,12 @@ def load_bullet_config(file_path: str) -> BulletConfig:
         "width": data["width"],
         "height": data["height"]
     }
+
+
+def load_waves_config(file_path: str) -> WavesConfig:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return {"waves": data["waves"]}
 
 
 def load_interface_config(file_path: str) -> InterfaceConfig:

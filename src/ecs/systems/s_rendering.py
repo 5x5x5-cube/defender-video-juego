@@ -7,10 +7,13 @@ from src.ecs.components.c_surface import CSurface
 from src.ecs.components.c_viewport import CViewport
 
 
-def system_rendering(world: esper.World, screen: pygame.Surface):
+def system_rendering(world: esper.World, screen: pygame.Surface,
+                     hidden_tags: tuple = ()):
     c_viewport = _get_viewport(world)
     screen_rect = screen.get_rect()
     for entity, (c_transform, c_surface) in world.get_components(CTransform, CSurface):
+        if any(world.has_component(entity, tag) for tag in hidden_tags):
+            continue
         parallax_factor = _get_parallax_factor(world, entity)
         draw_y = c_transform.pos.y
 

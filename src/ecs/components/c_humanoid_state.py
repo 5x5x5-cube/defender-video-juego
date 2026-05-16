@@ -5,6 +5,7 @@ class HumanoidState(Enum):
     ON_GROUND = 0
     CAPTURED = 1
     FALLING = 2
+    CARRIED = 3
 
 
 class CHumanoidState:

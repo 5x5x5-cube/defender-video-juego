@@ -6,6 +6,7 @@ from src.game.menu_scene import MenuScene
 from src.game.play_scene import PlayScene
 from src.game.game_over_scene import GameOverScene
 from src.game.win_scene import WinScene
+from src.game.wave_complete_scene import WaveCompleteScene
 
 
 class GameEngine:
@@ -32,6 +33,7 @@ class GameEngine:
         self._scenes["PLAY_SCENE"] = PlayScene(self)
         self._scenes["GAME_OVER_SCENE"] = GameOverScene(self)
         self._scenes["WIN_SCENE"] = WinScene(self)
+        self._scenes["WAVE_COMPLETE_SCENE"] = WaveCompleteScene(self)
         self._current_scene: Scene = None
         self._scene_name_to_switch: str = None
 
