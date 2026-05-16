@@ -1,4 +1,5 @@
 {
+    "level_kill_quota": 15,
     "lander": {
         "image": "assets/img/enemy_lander.png",
         "wander_speed": 30,
@@ -17,6 +18,20 @@
             "number_frames": 5,
             "list": [
                 { "name": "fly", "start": 0, "end": 4, "framerate": 8 }
+            ]
+        }
+    },
+    "mutant": {
+        "image": "assets/img/enemy_mutant.png",
+        "speed": 90,
+        "shoot_cooldown_min": 1.5,
+        "shoot_cooldown_max": 3.0,
+        "bullet_speed": 150,
+        "bullet_image": "assets/img/enemy_bullet.png",
+        "animations": {
+            "number_frames": 5,
+            "list": [
+                { "name": "fly", "start": 0, "end": 4, "framerate": 10 }
             ]
         }
     }

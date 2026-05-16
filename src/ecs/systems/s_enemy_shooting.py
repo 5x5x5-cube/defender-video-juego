@@ -5,19 +5,23 @@ from src.ecs.components.c_shoot_timer import CShootTimer
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_viewport import CViewport
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
+from src.ecs.components.tags.c_tag_mutant import CTagMutant
 from src.ecs.components.tags.c_tag_player import CTagPlayer
-from src.ecs.load.load_world import LanderConfig
+from src.ecs.load.load_world import EnemiesConfig
 from src.create.prefab_creator import create_enemy_bullet
 
 
 def system_enemy_shooting(world: esper.World, delta_time: float,
-                          lander_cfg: LanderConfig):
+                          enemies_cfg: EnemiesConfig):
     player_pos = _get_player_position(world)
     c_viewport = _get_viewport(world)
     if player_pos is None or c_viewport is None:
         return
 
-    for _, (c_transform, c_shoot_timer, _) in world.get_components(
+    lander_cfg = enemies_cfg["lander"]
+    mutant_cfg = enemies_cfg["mutant"]
+
+    for enemy_entity, (c_transform, c_shoot_timer, _) in world.get_components(
             CTransform, CShootTimer, CTagEnemy):
         c_shoot_timer.timer -= delta_time
         if c_shoot_timer.timer > 0:
@@ -26,7 +30,8 @@ def system_enemy_shooting(world: esper.World, delta_time: float,
         if not _is_on_screen(c_transform, c_viewport):
             continue
 
-        create_enemy_bullet(world, c_transform.pos, player_pos, lander_cfg)
+        cfg = mutant_cfg if world.has_component(enemy_entity, CTagMutant) else lander_cfg
+        create_enemy_bullet(world, c_transform.pos, player_pos, cfg)
         c_shoot_timer.reset()
 
 

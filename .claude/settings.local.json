@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from PIL import Image; img = Image.open\\('c:/Users/ronal/Documents/desarollojuegos/defender-video-juego/assets/img/enemy_mutant.png'\\); print\\(img.size\\)\")",
+      "Bash(python -c \"import pygame; pygame.init\\(\\); s=pygame.image.load\\('c:/Users/ronal/Documents/desarollojuegos/defender-video-juego/assets/img/enemy_mutant.png'\\); print\\(s.get_size\\(\\)\\)\")",
+      "Bash(python -c \"import src.engine.game_engine; print\\('OK'\\)\")",
+      "Bash(python -c \"from src.ecs.systems.s_enemy_lander_state import system_enemy_lander_state; print\\('OK'\\)\")",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

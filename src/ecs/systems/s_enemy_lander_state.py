@@ -4,7 +4,7 @@ import esper
 import pygame
 
 from src.ecs.components.c_enemy_lander_state import CEnemyLanderState, LanderState
-from src.create.prefab_creator import create_humanoid_explosion
+from src.create.prefab_creator import create_humanoid_explosion, create_enemy_mutant
 from src.engine.service_locator import ServiceLocator
 from src.ecs.components.c_humanoid_state import CHumanoidState, HumanoidState
 from src.ecs.components.c_shoot_timer import CShootTimer
@@ -12,10 +12,13 @@ from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
 from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
-from src.ecs.load.load_world import LanderConfig
+from src.ecs.load.load_world import EnemiesConfig, LanderConfig
 
 
-def system_enemy_lander_state(world: esper.World, lander_cfg: LanderConfig):
+def system_enemy_lander_state(world: esper.World, enemies_cfg: EnemiesConfig):
+    lander_cfg = enemies_cfg["lander"]
+    landers_to_mutate: list[tuple[int, pygame.Vector2]] = []
+
     for lander_entity, (c_transform, c_velocity, c_lander_state, _) in world.get_components(
             CTransform, CVelocity, CEnemyLanderState, CTagEnemy):
         if c_lander_state.state == LanderState.WANDER:
@@ -25,8 +28,15 @@ def system_enemy_lander_state(world: esper.World, lander_cfg: LanderConfig):
             _do_hunting(world, lander_entity, c_transform, c_velocity,
                         c_lander_state, lander_cfg)
         elif c_lander_state.state == LanderState.CAPTURE:
-            _do_capture(world, lander_entity, c_transform, c_velocity,
-                        c_lander_state, lander_cfg)
+            mutated = _do_capture(world, lander_entity, c_transform, c_velocity,
+                                  c_lander_state, lander_cfg)
+            if mutated:
+                landers_to_mutate.append((lander_entity, c_transform.pos.copy()))
+
+    for lander_entity, pos in landers_to_mutate:
+        if world.entity_exists(lander_entity):
+            world.delete_entity(lander_entity)
+        create_enemy_mutant(world, pos.x, pos.y, enemies_cfg["mutant"])
 
 
 def _do_wander(world: esper.World,
@@ -73,7 +83,7 @@ def _do_hunting(world: esper.World, lander_entity: int,
 
 def _do_capture(world: esper.World, lander_entity: int,
                 c_transform: CTransform, c_velocity: CVelocity,
-                c_lander_state: CEnemyLanderState, lander_cfg: LanderConfig):
+                c_lander_state: CEnemyLanderState, lander_cfg: LanderConfig) -> bool:
     c_velocity.vel.x = 0
     c_velocity.vel.y = -lander_cfg["ascend_speed"]
 
@@ -91,8 +101,9 @@ def _do_capture(world: esper.World, lander_entity: int,
             world.delete_entity(c_lander_state.target_humanoid)
             ServiceLocator.sounds_service.play("assets/snd/lander_mutate_astronaut.ogg")
         c_lander_state.target_humanoid = -1
-        c_lander_state.state = LanderState.WANDER
-        c_velocity.vel.y = 0
+        return True
+
+    return False
 
 
 def _capture_humanoid(world: esper.World, lander_entity: int,
