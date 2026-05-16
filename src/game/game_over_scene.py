@@ -3,6 +3,7 @@ import pygame
 from src.engine.scenes.scene import Scene
 from src.engine.service_locator import ServiceLocator
 from src.ecs.load.load_world import load_interface_config
+import src.engine.game_state as game_state
 
 
 class GameOverScene(Scene):
@@ -45,8 +46,10 @@ class GameOverScene(Scene):
     def do_process_events(self, event: pygame.event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
+                game_state.reset()
                 self.switch_scene("PLAY_SCENE")
             elif event.key == pygame.K_ESCAPE:
+                game_state.reset()
                 self.switch_scene("MENU_SCENE")
 
     def do_draw(self, screen):

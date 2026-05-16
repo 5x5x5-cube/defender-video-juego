@@ -12,3 +12,4 @@ class CHumanoidState:
         self.state = HumanoidState.ON_GROUND
         self.spawn_x = spawn_x
         self.spawn_y = spawn_y
+        self.fall_start_y: float = 0.0

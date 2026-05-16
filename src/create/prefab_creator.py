@@ -22,8 +22,9 @@ from src.ecs.components.tags.c_tag_bullet import CTagBullet
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
 from src.ecs.components.tags.c_tag_enemy_bullet import CTagEnemyBullet
 from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
+from src.ecs.components.tags.c_tag_mutant import CTagMutant
 from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
-from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, LanderConfig, PlayerConfig
+from src.ecs.load.load_world import BlinkRateConfig, BulletConfig, LanderConfig, MutantConfig, PlayerConfig
 from src.ecs.components.c_player_state import FacingDirection
 from src.engine.service_locator import ServiceLocator
 
@@ -247,6 +248,38 @@ def create_enemy_lander(world: esper.World, world_x: float,
         lander_cfg["shoot_cooldown_min"], lander_cfg["shoot_cooldown_max"]))
     world.add_component(lander_entity, CTagEnemy())
     return lander_entity
+
+
+def create_enemy_mutant(world: esper.World, world_x: float,
+                        world_y: float, mutant_cfg: MutantConfig) -> int:
+    mutant_surface = ServiceLocator.images_service.get(mutant_cfg["image"])
+    anim_cfg = mutant_cfg["animations"]
+    num_frames = anim_cfg["number_frames"]
+    frame_width = mutant_surface.get_width() // num_frames
+    mutant_height = mutant_surface.get_height()
+
+    mutant_entity = world.create_entity()
+    world.add_component(mutant_entity, CTransform(pygame.Vector2(world_x, world_y)))
+    world.add_component(mutant_entity, CVelocity(pygame.Vector2(0, 0)))
+    c_surface = CSurface.from_surface(mutant_surface)
+    c_surface.area = pygame.Rect(0, 0, frame_width, mutant_height)
+    world.add_component(mutant_entity, c_surface)
+    world.add_component(mutant_entity, CAnimation(num_frames, anim_cfg["list"]))
+    world.add_component(mutant_entity, CShootTimer(
+        mutant_cfg["shoot_cooldown_min"], mutant_cfg["shoot_cooldown_max"]))
+    world.add_component(mutant_entity, CTagEnemy())
+    world.add_component(mutant_entity, CTagMutant())
+    return mutant_entity
+
+
+def create_mutant_explosion(world: esper.World, pos: pygame.Vector2):
+    colors = [
+        pygame.Color(255, 100, 0),
+        pygame.Color(255, 200, 0),
+        pygame.Color(200, 0, 200),
+    ]
+    _spawn_particles(world, pos, num_particles=20, speed=80,
+                     lifetime=0.6, colors=colors, sizes=[1, 2])
 
 
 def create_enemy_bullet(world: esper.World, origin_pos: pygame.Vector2,

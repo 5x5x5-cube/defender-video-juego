@@ -9,7 +9,9 @@ from src.ecs.components.c_player_state import CPlayerState, FacingDirection, Ver
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
+from src.ecs.components.tags.c_tag_humanoid import CTagHumanoid
 from src.ecs.components.tags.c_tag_player import CTagPlayer
+from src.ecs.components.tags.c_tag_player_burner import CTagPlayerBurner
 from src.create.prefab_creator import (create_star, create_player,
     create_player_burner, create_input_commands, create_viewport,
     create_terrain, create_bullet, create_humanoids)
@@ -27,15 +29,22 @@ from src.ecs.systems.s_camera import system_camera
 from src.ecs.systems.s_screen_bullet import system_screen_bullet
 from src.ecs.systems.s_humanoid_state import system_humanoid_state
 from src.ecs.systems.s_enemy_lander_state import system_enemy_lander_state
+from src.ecs.systems.s_enemy_mutant_state import system_enemy_mutant_state
 from src.ecs.systems.s_enemy_spawner import system_enemy_spawner
 from src.ecs.systems.s_enemy_shooting import system_enemy_shooting
 from src.ecs.systems.s_screen_enemy import system_screen_enemy
 from src.ecs.systems.s_collision_player import system_collision_player
 from src.ecs.systems.s_collision_bullet_enemy import system_collision_bullet_enemy
+from src.ecs.systems.s_collision_bullet_humanoid import system_collision_bullet_humanoid
+from src.ecs.systems.s_collision_rescue import system_collision_rescue
 from src.ecs.systems.s_particle_cleanup import system_particle_cleanup
 from src.ecs.systems.s_debug_rendering import system_debug_rendering
 from src.ecs.systems.s_debug_entities import system_debug_entities
 from src.engine.service_locator import ServiceLocator
+import src.engine.game_state as game_state
+
+_PAUSED_BLINK_RATE = 0.4
+_RESPAWN_DELAY = 1.5
 
 
 class PlayScene(Scene):
@@ -86,18 +95,22 @@ class PlayScene(Scene):
                              self._player_cfg["initial_position"])
         create_viewport(self.ecs_world, world_width, self.screen_rect.width)
         create_input_commands(self.ecs_world)
+
         self._held_horizontal: set[FacingDirection] = set()
         self._debug_enabled = False
         self._paused = False
+        self._paused_blink_timer = 0.0
+        self._paused_show_text = True
         self._game_time = 0.0
         self._last_lander_spawn = 0.0
+        self._respawn_timer: float = -1.0
+
+        game_state.reset_flags()
+        ServiceLocator.sounds_service.play("assets/snd/game_start.ogg")
 
     def do_process_events(self, event: pygame.event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                self.switch_scene("GAME_OVER_SCENE")
-                return
-            elif event.key == pygame.K_p:
+            if event.key == pygame.K_p:
                 self._toggle_pause()
                 return
             elif event.key == pygame.K_TAB:
@@ -128,8 +141,22 @@ class PlayScene(Scene):
 
     def do_update(self, delta_time: float):
         if self._paused:
+            self._update_paused_blink(delta_time)
             return
+
+        # Handle respawn delay (player already deleted, waiting before respawn)
+        if self._respawn_timer >= 0:
+            self._respawn_timer -= delta_time
+            system_particle_cleanup(self.ecs_world, delta_time)
+            system_animation(self.ecs_world, delta_time)
+            system_star_blink(self.ecs_world, delta_time)
+            if self._respawn_timer <= 0:
+                self._respawn_timer = -1.0
+                self._do_respawn()
+            return
+
         self._game_time += delta_time
+
         system_player_state(self.ecs_world, delta_time, self._player_cfg)
         system_movement(self.ecs_world, delta_time)
         system_screen_player(self.ecs_world, self._game_rect,
@@ -139,10 +166,13 @@ class PlayScene(Scene):
         self._last_lander_spawn = system_enemy_spawner(
             self.ecs_world, self._game_time, self._last_lander_spawn,
             self._world_cfg["world_width"], self._enemies_cfg["lander"])
-        system_enemy_lander_state(self.ecs_world, self._enemies_cfg["lander"])
-        system_enemy_shooting(self.ecs_world, delta_time, self._enemies_cfg["lander"])
+        system_enemy_lander_state(self.ecs_world, self._enemies_cfg)
+        system_enemy_mutant_state(self.ecs_world, self._enemies_cfg["mutant"])
+        system_enemy_shooting(self.ecs_world, delta_time, self._enemies_cfg)
         system_screen_enemy(self.ecs_world, self._game_rect)
         system_collision_bullet_enemy(self.ecs_world)
+        system_collision_bullet_humanoid(self.ecs_world)
+        system_collision_rescue(self.ecs_world)
         system_collision_player(self.ecs_world)
         system_particle_cleanup(self.ecs_world, delta_time)
         system_camera(self.ecs_world, delta_time,
@@ -154,14 +184,49 @@ class PlayScene(Scene):
         system_player_burner_tracking(self.ecs_world)
         system_star_blink(self.ecs_world, delta_time)
 
+        self._handle_game_events()
+
+    def _handle_game_events(self):
+        if game_state.player_hit:
+            game_state.player_hit = False
+            game_state.lives -= 1
+            self._held_horizontal.clear()
+            if game_state.lives <= 0:
+                ServiceLocator.sounds_service.play("assets/snd/game_over.ogg")
+                game_state.reset()
+                self.switch_scene("GAME_OVER_SCENE")
+            else:
+                self._respawn_timer = _RESPAWN_DELAY
+            return
+
+        humanoid_count = len(self.ecs_world.get_component(CTagHumanoid))
+        if humanoid_count == 0:
+            ServiceLocator.sounds_service.play("assets/snd/game_over.ogg")
+            game_state.reset()
+            self.switch_scene("GAME_OVER_SCENE")
+            return
+
+        if game_state.level_kills >= self._enemies_cfg["level_kill_quota"]:
+            game_state.level_complete = False
+            self.switch_scene("WIN_SCENE")
+
+    def _do_respawn(self):
+        # Delete old burner if still exists
+        for entity, _ in self.ecs_world.get_component(CTagPlayerBurner):
+            self.ecs_world.delete_entity(entity)
+
+        create_player(self.ecs_world, self._player_cfg)
+        create_player_burner(self.ecs_world, self._player_cfg,
+                             self._player_cfg["initial_position"])
+
     def do_draw(self, screen):
         self._game_surface.fill(self._window_cfg["bg_color"])
         system_rendering(self.ecs_world, self._game_surface)
         screen.blit(self._game_surface, (0, self._hud_height))
 
-        system_rendering_hud(screen, self._interface_cfg)
+        system_rendering_hud(screen, self._interface_cfg, self.ecs_world)
 
-        if self._paused:
+        if self._paused and self._paused_show_text:
             self._draw_pause_overlay(screen)
         if self._debug_enabled:
             system_debug_rendering(self.ecs_world, screen, self._hud_height)
@@ -206,8 +271,16 @@ class PlayScene(Scene):
 
     def _toggle_pause(self):
         self._paused = not self._paused
+        self._paused_blink_timer = 0.0
+        self._paused_show_text = True
         if self._paused:
             ServiceLocator.sounds_service.play("assets/snd/game_paused.ogg")
+
+    def _update_paused_blink(self, delta_time: float):
+        self._paused_blink_timer += delta_time
+        if self._paused_blink_timer >= _PAUSED_BLINK_RATE:
+            self._paused_blink_timer = 0.0
+            self._paused_show_text = not self._paused_show_text
 
     def _draw_pause_overlay(self, screen):
         font = ServiceLocator.fonts_service.get("assets/fnt/PressStart2P.ttf", 16)

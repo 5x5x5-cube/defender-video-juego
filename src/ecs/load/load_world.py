@@ -53,8 +53,20 @@ class LanderConfig(TypedDict):
     animations: dict
 
 
+class MutantConfig(TypedDict):
+    image: str
+    speed: float
+    shoot_cooldown_min: float
+    shoot_cooldown_max: float
+    bullet_speed: float
+    bullet_image: str
+    animations: dict
+
+
 class EnemiesConfig(TypedDict):
+    level_kill_quota: int
     lander: LanderConfig
+    mutant: MutantConfig
 
 
 class BulletConfig(TypedDict):
@@ -135,7 +147,9 @@ def load_enemies_config(file_path: str) -> EnemiesConfig:
         data = json.load(file)
 
     return {
-        "lander": data["lander"]
+        "level_kill_quota": data["level_kill_quota"],
+        "lander": data["lander"],
+        "mutant": data["mutant"]
     }
 
 
