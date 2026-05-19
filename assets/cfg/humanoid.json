@@ -1,0 +1,6 @@
+{
+    "count": 10,
+    "wander_speed": 5.0,
+    "wander_range": 20.0,
+    "direction_change_chance": 0.02
+}

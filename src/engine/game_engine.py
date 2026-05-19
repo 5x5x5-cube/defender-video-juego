@@ -2,8 +2,11 @@ import json
 import pygame
 
 from src.engine.scenes.scene import Scene
-from src.game.example_scene import ExampleScene
-from src.game.example_scene_2 import ExampleScene2
+from src.game.menu_scene import MenuScene
+from src.game.play_scene import PlayScene
+from src.game.game_over_scene import GameOverScene
+from src.game.win_scene import WinScene
+from src.game.wave_complete_scene import WaveCompleteScene
 
 
 class GameEngine:
@@ -26,8 +29,11 @@ class GameEngine:
         self.is_running = False
 
         self._scenes: dict[str, Scene] = {}
-        self._scenes["EXAMPLE_SCENE"] = ExampleScene(self)
-        self._scenes["EXAMPLE_SCENE_2"] = ExampleScene2(self)
+        self._scenes["MENU_SCENE"] = MenuScene(self)
+        self._scenes["PLAY_SCENE"] = PlayScene(self)
+        self._scenes["GAME_OVER_SCENE"] = GameOverScene(self)
+        self._scenes["WIN_SCENE"] = WinScene(self)
+        self._scenes["WAVE_COMPLETE_SCENE"] = WaveCompleteScene(self)
         self._current_scene: Scene = None
         self._scene_name_to_switch: str = None
 
