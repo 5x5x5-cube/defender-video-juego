@@ -1,0 +1,38 @@
+{
+    "level_kill_quota": 15,
+    "lander": {
+        "image": "assets/img/enemy_lander.png",
+        "wander_speed": 30,
+        "ascend_speed": 40,
+        "humanoid_bias_min": 0.1,
+        "humanoid_bias_max": 0.8,
+        "bias_range": 150,
+        "direction_change_chance": 0.03,
+        "spawn_interval": 3.0,
+        "max_count": 5,
+        "shoot_cooldown_min": 2.0,
+        "shoot_cooldown_max": 5.0,
+        "bullet_speed": 120,
+        "bullet_image": "assets/img/enemy_bullet.png",
+        "animations": {
+            "number_frames": 5,
+            "list": [
+                { "name": "fly", "start": 0, "end": 4, "framerate": 8 }
+            ]
+        }
+    },
+    "mutant": {
+        "image": "assets/img/enemy_mutant.png",
+        "speed": 90,
+        "shoot_cooldown_min": 1.5,
+        "shoot_cooldown_max": 3.0,
+        "bullet_speed": 150,
+        "bullet_image": "assets/img/enemy_bullet.png",
+        "animations": {
+            "number_frames": 5,
+            "list": [
+                { "name": "fly", "start": 0, "end": 4, "framerate": 10 }
+            ]
+        }
+    }
+}

@@ -1,0 +1,2 @@
+class CTagMutant:
+    pass
